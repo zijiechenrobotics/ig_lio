@@ -10,7 +10,7 @@ This work proposes an incremental Generalized Iterative Closest Point (GICP) bas
 
 The preview video is available: 
 
-**[YouTube ](https://youtu.be/VZV84s6Sok4)**
+**[YouTube ](https://www.youtube.com/watch?v=VyGc3_tXFSg&t=1s)**
 
 **[bilibili](https://www.bilibili.com/video/BV1fj411X7U6/?vd_source=a23d841c4ace01eddfe9603b21e7891f)**
 
@@ -57,4 +57,5 @@ Thanks for the below great open-source project for providing references to this 
 1. LOAM (J. Zhang and S. Singh. LOAM: Lidar Odometry and Mapping in Real-time)
 2. [FAST-LIO](https://github.com/hku-mars/FAST_LIO)
 3. [Faster-LIO](https://github.com/gaoxiang12/faster-lio)
-4. [SLICT](https://github.com/brytsknguyen/slict)
+4. [LINS](https://github.com/ChaoqinRobotics/LINS---LiDAR-inertial-SLAM)
+5. [SLICT](https://github.com/brytsknguyen/slict)
