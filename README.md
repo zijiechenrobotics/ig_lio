@@ -6,7 +6,7 @@
 
 This work proposes an incremental Generalized Iterative Closest Point (GICP) based tightly-coupled LiDAR-inertial odometry (LIO), iG-LIO, which addresses the challenges of integrating GICP into real-time LIO. 
 
-![ig_lio_cover](figures\ig_lio_cover.png)
+![ig_lio_cover](figures/ig_lio_cover.png)
 
 The preview video is available: 
 
@@ -40,15 +40,15 @@ We aligned the mapping results of iG-LIO with Google Earth and found that iG-LIO
 
 ## NCLT 2012-05-11
 
-![ig_nclt](figures\ig_nclt.png)
+![ig_nclt](figures/ig_nclt.png)
 
 ## Newer College Dataset 02_long_experiment
 
-![ig_ncd](figures\ig_ncd.png)
+![ig_ncd](figures/ig_ncd.png)
 
 ## hku_main_building
 
-![ig_hku](figures\ig_hku.png)
+![ig_hku](figures/ig_hku.png)
 
 # Acknowledgements
 
