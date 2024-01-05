@@ -1,0 +1,7 @@
+<launch>
+    <rosparam command="load" file="$(find ig_lio)/config/ulhk.yaml" />
+
+    <node pkg="ig_lio" type="ig_lio_node" name="ig_lio_node" output="screen" />
+    
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find ig_lio)/rviz/lio_show.rviz" required="true" />
+</launch>
