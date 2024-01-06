@@ -10,6 +10,8 @@ This work proposes an incremental Generalized Iterative Closest Point (GICP) bas
 
 The experiment video can be found on **[YouTube ](https://youtu.be/zMktZdj4AAk), [bilibili](https://www.bilibili.com/video/BV1dt4y1Z7z7/)**.
 
+The paper is available in [PDF](ig_lio_early_access.pdf).
+
 ![ig_lio_cover](figures/ig_lio_cover.png)
 
 ## 1. Build
