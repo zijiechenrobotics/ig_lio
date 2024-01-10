@@ -221,7 +221,14 @@ Thanks for the following public dataset.
 3. [Botanic Garden](https://github.com/robot-pesg/BotanicGarden)
 4. [R3live](https://github.com/ziv-lin/r3live_dataset)
 
-## 7. Time Line
+## 7. Known Issues
+
+**What can’t iG-LIO do?**
+
+- The extremely narrow environment (e.g., some sequence in the Hilti SLAM Challenge).
+- The scene is very open and devoid of geometric features.
+
+## 8. Time Line
 
 | Time         | Event                                                        |
 | ------------ | ------------------------------------------------------------ |

@@ -704,7 +704,7 @@ int main(int argc, char** argv) {
 
   odom_stream.open(result_path, std::ios::out);
   if (!odom_stream.is_open()) {
-    LOG(INFO) << "failed to open: " << result_path;
+    LOG(ERROR) << "failed to open: " << result_path;
     exit(0);
   }
 
