@@ -9,6 +9,7 @@
 #include <ros/ros.h>
 #include <sensor_msgs/Imu.h>
 #include <tf/transform_broadcaster.h>
+#include <boost/filesystem.hpp>
 
 #include <pcl/filters/voxel_grid.h>
 
@@ -16,6 +17,8 @@
 #include "ig_lio/logger.hpp"
 #include "ig_lio/pointcloud_preprocess.h"
 #include "ig_lio/timer.h"
+
+namespace fs = boost::filesystem;
 
 LidarType lidar_type = LidarType::LIVOX;
 constexpr double kAccScale = 9.80665;
@@ -694,10 +697,14 @@ int main(int argc, char** argv) {
   voxel_filter.setLeafSize(0.5, 0.5, 0.5);
 
   // save trajectory
-  std::string result_path = package_path + "/result/lio_odom.txt";
+  fs::path result_path = fs::path(package_path) / "result" / "lio_odom.txt";
+  if (!fs::exists(result_path.parent_path())) {
+    fs::create_directories(result_path.parent_path());	
+  }
+
   odom_stream.open(result_path, std::ios::out);
   if (!odom_stream.is_open()) {
-    LOG(INFO) << "faild to open: " << result_path;
+    LOG(INFO) << "failed to open: " << result_path;
     exit(0);
   }
 
