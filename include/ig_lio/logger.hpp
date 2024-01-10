@@ -38,14 +38,14 @@ Logger::Logger(int argc, char** argv) {
   FLAGS_alsologtostderr = true;
   FLAGS_log_prefix = true;
 
-  std::string current_path = boost::filesystem::current_path().c_str();
-  std::string log_path = current_path + "/log";
+  auto current_path = boost::filesystem::current_path();
+  auto log_path = current_path / "log";
   if (!boost::filesystem::exists(log_path)) {
     boost::filesystem::create_directories(log_path);
   }
 
   std::cout << "log path: " << log_path << std::endl;
-  FLAGS_log_dir = log_path;
+  FLAGS_log_dir = log_path.string();
 }
 
 // for ROS
@@ -61,13 +61,13 @@ Logger::Logger(int argc, char** argv, std::string current_path) {
   FLAGS_alsologtostderr = true;
   FLAGS_log_prefix = true;
 
-  std::string log_path = current_path + "/log";
+  auto log_path = boost::filesystem::path(current_path) / "log";
   if (!boost::filesystem::exists(log_path)) {
     boost::filesystem::create_directories(log_path);
   }
 
   std::cout << "log path: " << log_path << std::endl;
-  FLAGS_log_dir = log_path;
+  FLAGS_log_dir = log_path.string();
 }
 
 Logger::~Logger() {
