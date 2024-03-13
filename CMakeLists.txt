@@ -14,6 +14,8 @@ add_compile_options(-Wall -Wextra -Wpedantic -O3)
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(tf2_ros REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(pcl_conversions REQUIRED)
 find_package(PCL 1.8 REQUIRED)
@@ -33,37 +35,40 @@ include_directories(
   ${PROJECT_SOURCE_DIR}/thirdparty/sophus
 )
 
-# # Declare a C++ executable
-# add_executable(${PROJECT_NAME}_node
-#   src/ig_lio_node.cpp
-#   src/pointcloud_preprocess.cpp
-#   src/lio.cpp
-#   src/voxel_map.cpp
-#   src/SymmetricEigenSolver.cpp
-#   src/timer.cpp
-#   src/faster_voxel_grid.cpp
-# )
+# Declare a C++ executable
+add_executable(${PROJECT_NAME}_node
+  src/ig_lio_node.cpp
+  # src/pointcloud_preprocess.cpp
+  # src/lio.cpp
+  src/voxel_map.cpp
+  src/SymmetricEigenSolver.cpp
+  src/timer.cpp
+  src/faster_voxel_grid.cpp
+)
 
-# # Specify libraries to link a library or executable target against
-# ament_target_dependencies(${PROJECT_NAME}_node
-#   rclcpp
-#   sensor_msgs
-#   geometry_msgs
-#   pcl_conversions
-#   TBB
-# )
+# Specify libraries to link a library or executable target against
+ament_target_dependencies(${PROJECT_NAME}_node
+  rclcpp
+  sensor_msgs
+  nav_msgs
+  geometry_msgs
+  tf2_ros
+  pcl_conversions
+  TBB
+  livox_ros_driver2
+)
 
-# target_link_libraries(${PROJECT_NAME}_node
-#   ${PCL_LIBRARIES}
-#   ${TBB_LIBRARIES}
-#   glog
-#   gflags
-# )
+target_link_libraries(${PROJECT_NAME}_node
+  ${PCL_LIBRARIES}
+  ${TBB_LIBRARIES}
+  glog
+  gflags
+)
 
 # Install the executable
-# install(TARGETS ${PROJECT_NAME}_node
-#   DESTINATION lib/${PROJECT_NAME}
-# )
+install(TARGETS ${PROJECT_NAME}_node
+  DESTINATION lib/${PROJECT_NAME}
+)
 
 # Install various directory contents
 install(DIRECTORY include/

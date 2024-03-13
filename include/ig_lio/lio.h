@@ -9,8 +9,9 @@
 
 #include <deque>
 #include <numeric>
+#include <rclcpp/rclcpp.hpp>
 
-#include <sensor_msgs/Imu.h>
+#include <sensor_msgs/msg/imu.hpp>
 
 #include <glog/logging.h>
 
@@ -41,7 +42,7 @@ struct SensorMeasurement {
   // The time of the last laser point in the scan
   double lidar_end_time_{0.0};
   CloudPtr cloud_ptr_{};
-  std::deque<sensor_msgs::Imu> imu_buff_;
+  std::deque<sensor_msgs::msg::Imu> imu_buff_;
 
   Eigen::Matrix4d gnss_pose_ = Eigen::Matrix4d::Identity();
   GNSSStatus gnss_status_ = GNSSStatus::NONE;
