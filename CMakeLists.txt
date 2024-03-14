@@ -12,13 +12,15 @@ add_compile_options(-Wall -Wextra -Wpedantic -O3)
 
 # Find dependencies
 find_package(ament_cmake REQUIRED)
+find_package(ament_index_cpp REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
+find_package(tf2 REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(pcl_conversions REQUIRED)
-find_package(PCL 1.8 REQUIRED)
+find_package(PCL REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(livox_ros_driver2 REQUIRED)
 find_package(TBB REQUIRED)
@@ -38,8 +40,8 @@ include_directories(
 # Declare a C++ executable
 add_executable(${PROJECT_NAME}_node
   src/ig_lio_node.cpp
-  # src/pointcloud_preprocess.cpp
-  # src/lio.cpp
+  src/pointcloud_preprocess.cpp
+  src/lio.cpp
   src/voxel_map.cpp
   src/SymmetricEigenSolver.cpp
   src/timer.cpp
@@ -53,6 +55,7 @@ ament_target_dependencies(${PROJECT_NAME}_node
   nav_msgs
   geometry_msgs
   tf2_ros
+  tf2
   pcl_conversions
   TBB
   livox_ros_driver2

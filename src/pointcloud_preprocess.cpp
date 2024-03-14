@@ -4,11 +4,11 @@
 extern Timer timer;
 
 void PointCloudPreprocess::Process(
-    const livox_ros_driver::CustomMsg::ConstPtr& msg,
+    const livox_ros_driver2::msg::CustomMsg::SharedPtr msg,
     pcl::PointCloud<PointType>::Ptr& cloud_out,
     const double last_start_time) {
   double time_offset =
-      (msg->header.stamp.toSec() - last_start_time) * 1000.0;  // ms
+      (msg->header.stamp.sec + msg->header.stamp.nanosec * 1e-9  - last_start_time) * 1000.0;  // ms
 
   for (size_t i = 1; i < msg->point_num; ++i) {
     if ((msg->points[i].line < num_scans_) &&
@@ -32,7 +32,7 @@ void PointCloudPreprocess::Process(
 }
 
 void PointCloudPreprocess::Process(
-    const sensor_msgs::PointCloud2::ConstPtr& msg,
+    const sensor_msgs::msg::PointCloud2::SharedPtr msg,
     pcl::PointCloud<PointType>::Ptr& cloud_out) {
   switch (config_.lidar_type) {
   case LidarType::VELODYNE:
@@ -48,11 +48,11 @@ void PointCloudPreprocess::Process(
 }
 
 void PointCloudPreprocess::ProcessVelodyne(
-    const sensor_msgs::PointCloud2::ConstPtr& msg,
+    const sensor_msgs::msg::PointCloud2::SharedPtr msg,
     pcl::PointCloud<PointType>::Ptr& cloud_out) {
   pcl::PointCloud<VelodynePointXYZIRT> cloud_origin;
   pcl::fromROSMsg(*msg, cloud_origin);
-
+  LOG(INFO) << "Processing velodyne points";
   // These variables only works when no point timestamps given
   int plsize = cloud_origin.size();
   double omega_l = 3.61;  // scan angular velocity
@@ -135,7 +135,7 @@ void PointCloudPreprocess::ProcessVelodyne(
 }
 
 void PointCloudPreprocess::ProcessOuster(
-    const sensor_msgs::PointCloud2::ConstPtr& msg,
+    const sensor_msgs::msg::PointCloud2::SharedPtr msg,
     pcl::PointCloud<PointType>::Ptr& cloud_out) {
   pcl::PointCloud<OusterPointXYZIRT> cloud_origin;
   pcl::fromROSMsg(*msg, cloud_origin);

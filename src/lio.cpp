@@ -1,27 +1,41 @@
 #include "ig_lio/lio.h"
 #include "ig_lio/timer.h"
 
-extern Timer timer;
+Timer timer;
 
 bool LIO::MeasurementUpdate(SensorMeasurement& sensor_measurement) {
   if (sensor_measurement.measurement_type_ == MeasurementType::LIDAR) {
+    LOG(INFO) << "Processing LIDAR data";
     // range filter
     CloudPtr filtered_cloud_ptr(new CloudType());
     filtered_cloud_ptr->points.reserve(sensor_measurement.cloud_ptr_->size());
     for (const auto& pt : sensor_measurement.cloud_ptr_->points) {
       if (InRadius(pt)) {
-        filtered_cloud_ptr->points.emplace_back(pt);
+        // filtered_cloud_ptr->points.emplace_back(pt);
+        filtered_cloud_ptr->points.push_back(pt);
       }
     }
-    sensor_measurement.cloud_ptr_ = filtered_cloud_ptr;
 
+    //If I use this,  Floating point exception happens...
+    // sensor_measurement.cloud_ptr_ = filtered_cloud_ptr;
+
+
+
+
+
+    LOG(INFO) << "Before undistort and downsample" << std::endl;
+    LOG(INFO) << "The size of cloud is " << sensor_measurement.cloud_ptr_->size() << std::endl;
     timer.Evaluate(
         [&, this]() {
+            LOG(INFO) << "Inside undistort";
           // transform scan from lidar's frame to imu's frame
           CloudPtr cloud_body_ptr(new CloudType());
+          LOG(INFO) << "Start Transform cloud";
+          LOG(INFO) << "Extrinsic: " << std::endl << config_.T_imu_lidar << std::endl;
           pcl::transformPointCloud(*sensor_measurement.cloud_ptr_,
                                    *cloud_body_ptr,
                                    config_.T_imu_lidar);
+          LOG(INFO) << "Finish Transform cloud";  
           sensor_measurement.cloud_ptr_ = std::move(cloud_body_ptr);
 
           // undistort
@@ -35,6 +49,7 @@ bool LIO::MeasurementUpdate(SensorMeasurement& sensor_measurement) {
 
     timer.Evaluate(
         [&, this]() {
+            LOG(INFO) << "Inside downsample";
           fast_voxel_grid_ptr_->Filter(
               sensor_measurement.cloud_ptr_, cloud_DS_ptr_, cloud_cov_ptr_);
         },
@@ -75,7 +90,7 @@ bool LIO::MeasurementUpdate(SensorMeasurement& sensor_measurement) {
     iter_num_++;
   }
 
-  // LOG(INFO) << "final hessian: " << std::endl << final_hessian_;
+//   LOG(INFO) << "final hessian: " << std::endl << final_hessian_;
   // P_ = final_hessian_.inverse();
   ComputeFinalCovariance(delta_x);
   prev_state_ = curr_state_;
@@ -748,6 +763,7 @@ bool LIO::ErrorStateUpdate(const double dt,
   return true;
 }
 
+
 // Undistortion based on median integral
 bool LIO::UndistortPointCloud(const double bag_time,
                               const double lidar_end_time,
@@ -909,7 +925,7 @@ bool LIO::StaticInitialization(SensorMeasurement& sensor_measurement) {
   Q_.block<3, 3>(IndexNoiseBiasGyr, IndexNoiseBiasGyr) =
       config_.bg_cov * Eigen::Matrix3d::Identity();
 
-  lio_time_ = sensor_measurement.imu_buff_.back().header.stamp.toSec();
+  lio_time_ = sensor_measurement.imu_buff_.back().header.stamp.sec + sensor_measurement.imu_buff_.back().header.stamp.nanosec * 1e-9;
   lio_init_ = true;
 
   LOG(INFO) << "imu static, mean_acc_: " << mean_acc_.transpose()
@@ -973,9 +989,10 @@ bool LIO::AHRSInitialization(SensorMeasurement& sensor_measurement) {
   Q_.block<3, 3>(IndexNoiseBiasGyr, IndexNoiseBiasGyr) =
       config_.bg_cov * Eigen::Matrix3d::Identity();
 
-  lio_time_ = sensor_measurement.imu_buff_.back().header.stamp.toSec();
+  lio_time_ = sensor_measurement.imu_buff_.back().header.stamp.sec + sensor_measurement.imu_buff_.back().header.stamp.nanosec * 1e-9;
+  
   lio_init_ = true;
-
+  LOG(INFO) << "Done lio_init" << std::endl;
   return true;
 }
 

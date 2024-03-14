@@ -21,7 +21,6 @@
 #include <sophus/so3.hpp>
 
 #include <pcl/common/transforms.h>
-
 #include <tbb/parallel_for.h>
 #include <tbb/parallel_reduce.h>
 

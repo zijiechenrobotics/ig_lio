@@ -13,11 +13,13 @@
 
   <!-- Update dependencies for ROS2 -->
   <depend>rclcpp</depend>
+  <depend>ament_index_cpp</depend>
   <depend>sensor_msgs</depend>
   <depend>geometry_msgs</depend>
   <depend>pcl_conversions</depend>
   <depend>livox_ros_driver2</depend>
   <depend>tf2_ros</depend>
+  <depend>tf2</depend>
   <depend>nav_msgs</depend>
   <!-- Add any additional ROS2 dependencies your package might have -->
 
@@ -30,6 +32,6 @@
   <!-- <exec_depend>livox_ros2_driver</exec_depend> -->
 
   <export>
-    <!-- Export information, if needed, for other tools -->
+    <build_type>ament_cmake</build_type>
   </export>
 </package>

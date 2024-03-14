@@ -160,11 +160,11 @@ class PointCloudPreprocess {
 
   ~PointCloudPreprocess() = default;
 
-  void Process(const livox_ros_driver2::msg::CustomMsg::ConstSharedPtr& msg,
+  void Process(const livox_ros_driver2::msg::CustomMsg::SharedPtr msg,
                pcl::PointCloud<PointType>::Ptr& cloud_out,
                const double last_start_time = 0.0);
 
-  void Process(const sensor_msgs::msg::PointCloud2::ConstSharedPtr& msg,
+  void Process(const sensor_msgs::msg::PointCloud2::SharedPtr msg,
                pcl::PointCloud<PointType>::Ptr& cloud_out);
 
  private:
@@ -177,10 +177,10 @@ class PointCloudPreprocess {
   template <typename T>
   bool IsNear(const T& p1, const T& p2);
 
-  void ProcessVelodyne(const sensor_msgs::msg::PointCloud2::ConstSharedPtr& msg,
+  void ProcessVelodyne(const sensor_msgs::msg::PointCloud2::SharedPtr msg,
                        pcl::PointCloud<PointType>::Ptr& cloud_out);
 
-  void ProcessOuster(const sensor_msgs::msg::PointCloud2::ConstSharedPtr& msg,
+  void ProcessOuster(const sensor_msgs::msg::PointCloud2::SharedPtr msg,
                      pcl::PointCloud<PointType>::Ptr& cloud_out);
 
   int num_scans_ = 128;
