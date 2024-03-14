@@ -190,6 +190,8 @@ private:
     cloud_preprocess_config.lidar_type = lidar_type_;
     cloud_preprocess_config.point_filter_num = point_filter_num;
     cloud_preprocess_config.time_scale = time_scale;
+    cloud_preprocess_config.max_radius = max_radius;
+    cloud_preprocess_config.min_radius = min_radius;
     cloud_preprocess_ptr =
         std::make_shared<PointCloudPreprocess>(cloud_preprocess_config);
 
@@ -227,10 +229,6 @@ private:
     T_imu_lidar.block<3, 3>(0, 0) =
         Eigen::Map<const Eigen::Matrix<double, -1, -1, Eigen::RowMajor>>(
             R_imu_lidar_v.data(), 3, 3);
-    LOG(INFO) << "Extrinsic: " << std::endl << T_imu_lidar << std::endl;
-    LOG(INFO) << "Start testing" << std::endl;
-
-
 
     LIO::Config lio_config;
     lio_config.acc_cov = acc_cov;
@@ -283,12 +281,10 @@ private:
     imu_sub_ = this->create_subscription<sensor_msgs::msg::Imu>(
         imu_topic, 10, std::bind(&IG_LIO_NODE::ImuCallBack, this, _1));
     if (lidar_type_ == LidarType::LIVOX) {
-      LOG(INFO) << "livox" << std::endl;
       cloud_sub_ = nullptr;
       livox_sub_ = this->create_subscription<livox_ros_driver2::msg::CustomMsg>(
         lidar_topic, 10, std::bind(&IG_LIO_NODE::LivoxCloudCallBack, this, std::placeholders::_1));
     } else {
-      LOG(INFO) << "velodyne" << std::endl;
       livox_sub_ = nullptr;
       cloud_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
         lidar_topic, 10, std::bind(&IG_LIO_NODE::CloudCallBack, this, std::placeholders::_1));

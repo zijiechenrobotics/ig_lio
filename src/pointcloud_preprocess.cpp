@@ -128,8 +128,8 @@ void PointCloudPreprocess::ProcessVelodyne(
         yaw_last[layer] = yaw_angle;
         time_last[layer] = point.curvature;
       }
-
-      cloud_out->push_back(point);
+      if(InRadius(point))
+        cloud_out->push_back(point);
     }
   }
 }
@@ -153,10 +153,14 @@ void PointCloudPreprocess::ProcessOuster(
       point.intensity = cloud_origin.at(i).intensity;
       // ms
       point.curvature = cloud_origin.at(i).t * 1e-6;
-      cloud_out->push_back(point);
+      if(InRadius(point))
+        cloud_out->push_back(point);
     }
   }
 }
+
+
+
 
 template <typename T>
 inline bool PointCloudPreprocess::HasInf(const T& p) {

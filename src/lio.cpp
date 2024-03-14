@@ -5,37 +5,33 @@ Timer timer;
 
 bool LIO::MeasurementUpdate(SensorMeasurement& sensor_measurement) {
   if (sensor_measurement.measurement_type_ == MeasurementType::LIDAR) {
-    LOG(INFO) << "Processing LIDAR data";
-    // range filter
-    CloudPtr filtered_cloud_ptr(new CloudType());
-    filtered_cloud_ptr->points.reserve(sensor_measurement.cloud_ptr_->size());
-    for (const auto& pt : sensor_measurement.cloud_ptr_->points) {
-      if (InRadius(pt)) {
-        // filtered_cloud_ptr->points.emplace_back(pt);
-        filtered_cloud_ptr->points.push_back(pt);
-      }
-    }
+    LOG(INFO) << "The size of original cloud is " << sensor_measurement.cloud_ptr_->size() << std::endl;
 
-    //If I use this,  Floating point exception happens...
+    // // range filter
+    // CloudPtr filtered_cloud_ptr(new CloudType());
+    
+    // filtered_cloud_ptr->points.reserve(sensor_measurement.cloud_ptr_->size());
+    // for (const auto& pt : sensor_measurement.cloud_ptr_->points) {
+    //   if (InRadius(pt)) {
+    //     filtered_cloud_ptr->points.emplace_back(pt);
+    //   }
+    // }
+
+    // //If I use this,  Floating point exception happens...
+    // sensor_measurement.cloud_ptr_->clear();
     // sensor_measurement.cloud_ptr_ = filtered_cloud_ptr;
-
-
-
-
-
-    LOG(INFO) << "Before undistort and downsample" << std::endl;
-    LOG(INFO) << "The size of cloud is " << sensor_measurement.cloud_ptr_->size() << std::endl;
+    // LOG(INFO) << "The size of filtered cloud is " << filtered_cloud_ptr->size() << std::endl;
+    // for (const auto& pt : sensor_measurement.cloud_ptr_->points) {
+    //     std::cout << "Point: (" << pt.x << ", " << pt.y << ", " << pt.z << ")" << std::endl;
+    // }
     timer.Evaluate(
         [&, this]() {
-            LOG(INFO) << "Inside undistort";
           // transform scan from lidar's frame to imu's frame
           CloudPtr cloud_body_ptr(new CloudType());
-          LOG(INFO) << "Start Transform cloud";
-          LOG(INFO) << "Extrinsic: " << std::endl << config_.T_imu_lidar << std::endl;
+          
           pcl::transformPointCloud(*sensor_measurement.cloud_ptr_,
                                    *cloud_body_ptr,
                                    config_.T_imu_lidar);
-          LOG(INFO) << "Finish Transform cloud";  
           sensor_measurement.cloud_ptr_ = std::move(cloud_body_ptr);
 
           // undistort
@@ -49,14 +45,13 @@ bool LIO::MeasurementUpdate(SensorMeasurement& sensor_measurement) {
 
     timer.Evaluate(
         [&, this]() {
-            LOG(INFO) << "Inside downsample";
           fast_voxel_grid_ptr_->Filter(
               sensor_measurement.cloud_ptr_, cloud_DS_ptr_, cloud_cov_ptr_);
         },
         "downsample");
   }
 
-  // Make sure the local map is dense enought to measurement update
+  // Make sure the local map is dense enough to measurement update
   if (lidar_frame_count_ <= 10) {
     CloudPtr trans_cloud_ptr(new CloudType());
     pcl::transformPointCloud(

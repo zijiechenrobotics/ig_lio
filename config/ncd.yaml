@@ -5,7 +5,7 @@ min_radius: 0.5
 max_radius: 150.0
 point_filter_num: 2
 time_scale: 0.001 # nclt: 0.001 other: 1000.0
-enable_ahrs_initalization: true
+enable_ahrs_initalization: false
 enable_acc_correct: false
 
 scan_resolution: 0.5
