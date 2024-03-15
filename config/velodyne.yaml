@@ -1,0 +1,62 @@
+/**:
+  ros__parameters:
+    #for odom
+
+    #topic names 
+    odom/lidar_topic: /velodyne_points #/points_raw
+    odom/imu_topic: /imu/data #/imu_correct
+    odom/lidar_type: velodyne # livox velodyne ouster
+
+    #frames
+    odom/odom_frame: odom
+    odom/robot_frame: base_link
+    odom/imu_frame: imu_link
+    odom/lidar_frame: velodyne
+    odom/min_radius: 0.3
+    odom/max_radius: 150.0
+    odom/point_filter_num: 10
+    odom/time_scale: 1000.0 # nclt: 0.001 other: 1000.0
+    odom/enable_ahrs_initalization: true
+    odom/enable_acc_correct: false
+
+    odom/scan_resolution: 0.1
+    odom/voxel_map_resolution: 0.5
+    odom/max_iterations: 10
+
+    odom/acc_cov: 0.1
+    odom/gyr_cov: 0.1
+    odom/ba_cov: 0.000001
+    odom/bg_cov: 0.000001
+
+    odom/gicp_constraints_gain: 100.0
+    odom/point2plane_constraints_gain: 1000.0
+    odom/enable_undistort: true
+    odom/enable_outlier_rejection: true
+
+    odom/gravity: 9.80665
+    odom/init_ori_cov: 0.0001
+    odom/init_pos_cov: 0.0001
+    odom/init_vel_cov: 100.0
+    odom/init_ba_cov: 0.0001
+    odom/init_bg_cov: 0.0001
+    
+    #for  extrinsics
+    extrinsics/imu2lidar/t: [0.0, 0.0, 0.0]
+    extrinsics/imu2lidar/r: [1.0, 0.0, 0.0,
+                            0.0, 1.0, 0.0,
+                            0.0,  0.0, 1.0 ]
+    
+    extrinsics/robot2lidar/t: [0.0, 0.0, 0.0]
+    extrinsics/robot2lidar/r: [1.0, 0.0, 0.0,
+                              0.0, 1.0, 0.0,
+                              0.0,  0.0, 1.0 ]
+                              
+    extrinsics/robot2imu/t: [0.0, 0.0, 0.0]
+    extrinsics/robot2imu/r: [1.0, 0.0, 0.0,
+                            0.0, 1.0, 0.0,
+                            0.0,  0.0, 1.0 ]
+
+    #for map
+    map/save_map_path: home/user/humble_ws #do not put / at the end of line
+    map/map_name: test
+    map/map_frame: odom

@@ -563,39 +563,73 @@ double LIO::ConstructPoint2PlaneConstraints(Eigen::Matrix<double, 15, 15>& H,
   return result_matrix(7, 0);
 }
 
+
+//added this function since it hits a orthogonal error
+Eigen::Matrix3d LIO::correctRotationMatrix(const Eigen::Matrix3d& R) {
+    Eigen::JacobiSVD<Eigen::Matrix3d> svd(R, Eigen::ComputeFullU | Eigen::ComputeFullV);
+    Eigen::Matrix3d U = svd.matrixU();
+    Eigen::Matrix3d V = svd.matrixV();
+    // For a rotation matrix, we need to ensure the determinant is +1
+    Eigen::Matrix3d correctedR = U * V.transpose();
+    if(correctedR.determinant() < 0) {
+        U.col(2) *= -1; // Correct the sign to ensure a positive determinant
+        correctedR = U * V.transpose();
+    }
+    return correctedR;
+}
+
+
+
+
 double LIO::ConstructImuPriorConstraints(Eigen::Matrix<double, 15, 15>& H,
                                          Eigen::Matrix<double, 15, 1>& b) {
-  Sophus::SO3d ori_diff =
-      Sophus::SO3d(prev_state_.pose.block<3, 3>(0, 0).transpose() *
-                   curr_state_.pose.block<3, 3>(0, 0));
-  Eigen::Vector3d ori_error = ori_diff.log();
 
-  Eigen::Matrix3d right_jacoiban_inv = Sophus::SO3d::jr_inv(ori_diff);
+    /*-----------add a new logic to avoid orthogonal assertion -----------*/
 
-  Eigen::Matrix<double, 15, 15> jacobian =
-      Eigen::Matrix<double, 15, 15>::Identity();
-  jacobian.block<3, 3>(IndexErrorOri, IndexErrorOri) = right_jacoiban_inv;
 
-  // LOG(INFO) << "imu jacobian: " << std::endl << jacobian;
+    Eigen::Matrix3d rotationMatrix = prev_state_.pose.block<3, 3>(0, 0).transpose() *
+                                     curr_state_.pose.block<3, 3>(0, 0);
+    // Correct the rotation matrix
+    Eigen::Matrix3d correctedMatrix = correctRotationMatrix(rotationMatrix);
 
-  Eigen::Matrix<double, 15, 1> residual = Eigen::Matrix<double, 15, 1>::Zero();
-  residual.block<3, 1>(IndexErrorOri, 0) = ori_error;
-  residual.block<3, 1>(IndexErrorPos, 0) =
-      curr_state_.pose.block<3, 1>(0, 3) - prev_state_.pose.block<3, 1>(0, 3);
-  residual.block<3, 1>(IndexErrorVel, 0) = curr_state_.vel - prev_state_.vel;
-  residual.block<3, 1>(IndexErrorBiasAcc, 0) = curr_state_.ba - prev_state_.ba;
-  residual.block<3, 1>(IndexErrorBiasGyr, 0) = curr_state_.bg - prev_state_.bg;
+        // Use the corrected matrix to construct the Sophus::SO3d object
+    Sophus::SO3d ori_diff = Sophus::SO3d(correctedMatrix);
+    /* -------------------------------------------------------------------*/
 
-  Eigen::Matrix<double, 15, 15> inv_P = P_.inverse();
+    /*-----------This is the original one -----------*/
+        //   Sophus::SO3d ori_diff =
+        //       Sophus::SO3d(prev_state_.pose.block<3, 3>(0, 0).transpose() *
+        //                    curr_state_.pose.block<3, 3>(0, 0));
+    /* -------------------------------------------------------------------*/
 
-  // LOG(INFO) << "inv_P: " << std::endl << inv_P;
+    Eigen::Vector3d ori_error = ori_diff.log();
 
-  H += jacobian.transpose() * inv_P * jacobian;
-  b += jacobian.transpose() * inv_P * residual;
+    Eigen::Matrix3d right_jacoiban_inv = Sophus::SO3d::jr_inv(ori_diff);
 
-  double errors = residual.transpose() * inv_P * residual;
+    Eigen::Matrix<double, 15, 15> jacobian =
+        Eigen::Matrix<double, 15, 15>::Identity();
+    jacobian.block<3, 3>(IndexErrorOri, IndexErrorOri) = right_jacoiban_inv;
 
-  return errors;
+    // LOG(INFO) << "imu jacobian: " << std::endl << jacobian;
+
+    Eigen::Matrix<double, 15, 1> residual = Eigen::Matrix<double, 15, 1>::Zero();
+    residual.block<3, 1>(IndexErrorOri, 0) = ori_error;
+    residual.block<3, 1>(IndexErrorPos, 0) =
+        curr_state_.pose.block<3, 1>(0, 3) - prev_state_.pose.block<3, 1>(0, 3);
+    residual.block<3, 1>(IndexErrorVel, 0) = curr_state_.vel - prev_state_.vel;
+    residual.block<3, 1>(IndexErrorBiasAcc, 0) = curr_state_.ba - prev_state_.ba;
+    residual.block<3, 1>(IndexErrorBiasGyr, 0) = curr_state_.bg - prev_state_.bg;
+
+    Eigen::Matrix<double, 15, 15> inv_P = P_.inverse();
+
+    // LOG(INFO) << "inv_P: " << std::endl << inv_P;
+
+    H += jacobian.transpose() * inv_P * jacobian;
+    b += jacobian.transpose() * inv_P * residual;
+
+    double errors = residual.transpose() * inv_P * residual;
+
+    return errors;
 }
 
 bool LIO::Predict(const double time,

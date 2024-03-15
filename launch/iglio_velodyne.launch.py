@@ -16,7 +16,7 @@ def generate_launch_description():
     ig_lio_dir = get_package_share_directory('ig_lio')
     
     # Define the path to your parameter file
-    bg_velodyne_param_path = os.path.join(ig_lio_dir, 'config', 'bg_velodyne.yaml')
+    bg_velodyne_param_path = os.path.join(ig_lio_dir, 'config', 'velodyne.yaml')
 
     return LaunchDescription([
         Node(
@@ -26,11 +26,18 @@ def generate_launch_description():
             output='screen',
             parameters=[bg_velodyne_param_path],  # Pass the parameter file path directly
         ),
-        # Node(
-        #     package='rviz2',
-        #     executable='rviz2',
-        #     name='rviz',
-        #     arguments=['-d', os.path.join(ig_lio_dir, 'rviz', 'lio_show.rviz')],
-        #     output='screen'
-        # ),
+        Node(
+            package='ig_lio',
+            executable='ig_lio_map_node',
+            name='ig_lio_map_node',
+            output='screen',
+            parameters=[bg_velodyne_param_path],  # Pass the parameter file path directly
+        ),
+        Node(
+            package='rviz2',
+            executable='rviz2',
+            name='rviz',
+            arguments=['-d', os.path.join(ig_lio_dir, 'rviz', 'lio_show.rviz')],
+            output='screen'
+        ),
     ])

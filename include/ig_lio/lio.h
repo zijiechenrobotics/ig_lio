@@ -114,6 +114,7 @@ class LIO {
 
   bool IsInit() { return lio_init_; }
 
+  
   Eigen::Matrix4d GetCurrentPose() { return curr_state_.pose; }
 
   Eigen::Vector3d GetCurrentVel() { return curr_state_.vel; }
@@ -138,6 +139,9 @@ class LIO {
   static constexpr int IndexNoiseBiasAcc{12};
   static constexpr int IndexNoiseBiasGyr{15};
 
+
+
+
   struct PoseHistory {
     double time_ = 0.0;
     Eigen::Matrix4d T_ = Eigen::Matrix4d::Identity();
@@ -147,9 +151,11 @@ class LIO {
   };
   std::deque<PoseHistory> pose_history_;  // for pointcloud
 
+
+
   struct Correspondence {
    public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     Eigen::Vector3d mean_A = Eigen::Vector3d::Zero();
     Eigen::Vector3d mean_B = Eigen::Vector3d::Zero();
     Eigen::Matrix3d mahalanobis = Eigen::Matrix3d::Zero();
@@ -161,7 +167,7 @@ class LIO {
 
   struct State {
    public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     Eigen::Matrix4d pose = Eigen::Matrix4d::Identity();
     Eigen::Vector3d vel = Eigen::Vector3d::Zero();
     Eigen::Vector3d ba = Eigen::Vector3d::Zero();
@@ -202,6 +208,7 @@ class LIO {
   double ConstructImuPriorConstraints(Eigen::Matrix<double, 15, 15>& H,
                                       Eigen::Matrix<double, 15, 1>& b);
 
+  Eigen::Matrix3d correctRotationMatrix(const Eigen::Matrix3d& R);
   double ComputeError(const SensorMeasurement& sensor_measurement,
                       const State& state);
 

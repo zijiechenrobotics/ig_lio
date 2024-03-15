@@ -99,86 +99,107 @@ private:
 
   void DeclareParams(){
     // Initialize publishers, subscribers, parameters, etc.
-    this->declare_parameter<std::string>("imu_topic", "/imu/data");
-    this->declare_parameter<std::string>("lidar_topic", "points_raw");
-    this->declare_parameter<std::string>("lidar_type", "velodyne");
-    this->declare_parameter<double>("time_scale", 1000);
-    this->declare_parameter<int>("point_filter_num", 6);
-    // Declare and get parameters for init LIO
-    this->declare_parameter<double>("scan_resolution", 0.5);
-    this->declare_parameter<double>("voxel_map_resolution", 0.5);
-    this->declare_parameter<int>("max_iterations", 10);
-    // Declare and get various covariance and gravity parameters
-    this->declare_parameter<double>("acc_cov", 0.1);
-    this->declare_parameter<double>("gyr_cov", 0.1);
-    this->declare_parameter<double>("ba_cov", 0.000001);
-    this->declare_parameter<double>("bg_cov", 0.000001);
-    this->declare_parameter<double>("init_ori_cov", 0.0001);
-    this->declare_parameter<double>("init_pos_cov", 0.0001);
-    this->declare_parameter<double>("init_vel_cov", 100.0);
-    this->declare_parameter<double>("init_ba_cov", 0.0001);
-    this->declare_parameter<double>("init_bg_cov", 0.0001);
-    this->declare_parameter<double>("gravity", 9.80665);
+    this->declare_parameter<std::string>("odom/imu_topic", "imu/data");
+    this->declare_parameter<std::string>("odom/lidar_topic", "velodyne_points");
+    this->declare_parameter<std::string>("odom/lidar_type", "velodyne");
 
+    this->declare_parameter<std::string>("odom/odom_frame","odom");
+    this->declare_parameter<std::string>("odom/robot_frame","base_link");
+    this->declare_parameter<std::string>("odom/imu_frame", "imu_link");
+    this->declare_parameter<std::string>("odom/lidar_frame","velodyne");
+    this->declare_parameter<std::string>("map/map_frame","odom" );
+
+    this->declare_parameter<double>("odom/time_scale", 1000);
+    this->declare_parameter<int>("odom/point_filter_num", 6);
+    // Declare and get parameters for init LIO
+    this->declare_parameter<double>("odom/scan_resolution", 0.5);
+    this->declare_parameter<double>("odom/voxel_map_resolution", 0.5);
+    this->declare_parameter<int>("odom/max_iterations", 10);
+    // Declare and get various covariance and gravity parameters
+    this->declare_parameter<double>("odom/acc_cov", 0.1);
+    this->declare_parameter<double>("odom/gyr_cov", 0.1);
+    this->declare_parameter<double>("odom/ba_cov", 0.000001);
+    this->declare_parameter<double>("odom/bg_cov", 0.000001);
+    this->declare_parameter<double>("odom/init_ori_cov", 0.0001);
+    this->declare_parameter<double>("odom/init_pos_cov", 0.0001);
+    this->declare_parameter<double>("odom/init_vel_cov", 100.0);
+    this->declare_parameter<double>("odom/init_ba_cov", 0.0001);
+    this->declare_parameter<double>("odom/init_bg_cov", 0.0001);
+    this->declare_parameter<double>("odom/gravity", 9.80665);
 
     // Declare and get parameters for GICP constraints, outlier rejection, and others
-    this->declare_parameter<double>("gicp_constraints_gain", 100.0);
-    this->declare_parameter<double>("point2plane_constraints_gain", 1000.0);
-    this->declare_parameter<bool>("enable_undistort", true);
-    this->declare_parameter<bool>("enable_outlier_rejection", true);
-    this->declare_parameter<bool>("enable_acc_correct", true);
-    this->declare_parameter<bool>("enable_ahrs_initalization", true);
+    this->declare_parameter<double>("odom/gicp_constraints_gain", 100.0);
+    this->declare_parameter<double>("odom/point2plane_constraints_gain", 1000.0);
+    this->declare_parameter<bool>("odom/enable_undistort", true);
+    this->declare_parameter<bool>("odom/enable_outlier_rejection", true);
+    this->declare_parameter<bool>("odom/enable_acc_correct", true);
+    this->declare_parameter<bool>("odom/enable_ahrs_initalization", true);
     // Declare and get parameters for min and max radius
-    this->declare_parameter<double>("min_radius", 1.0);
-    this->declare_parameter<double>("max_radius", 150.0);
+    this->declare_parameter<double>("odom/min_radius", 1.0);
+    this->declare_parameter<double>("odom/max_radius", 150.0);
 
     // For vector parameters like extrinsic, it's a bit more complex
     // Declare and get extrinsic parameters (vectors)
-    this->declare_parameter<std::vector<double>>("t_imu_lidar", default_t_imu_lidar);
-    this->declare_parameter<std::vector<double>>("R_imu_lidar", default_R_imu_lidar);
+    this->declare_parameter<std::vector<double>>("extrinsics/imu2lidar/t", default_t_imu_lidar);
+    this->declare_parameter<std::vector<double>>("extrinsics/imu2lidar/r", default_R_imu_lidar);
+
+    this->declare_parameter<std::vector<double>>("extrinsics/robot2imu/t", default_t_imu_lidar);
+    this->declare_parameter<std::vector<double>>("extrinsics/robot2imu/r", default_R_imu_lidar);
+
+    this->declare_parameter<std::vector<double>>("extrinsics/robot2lidar/t", default_t_imu_lidar);
+    this->declare_parameter<std::vector<double>>("extrinsics/robot2lidar/r", default_R_imu_lidar);
 
 
   }
 
   void GetParams(){
-    this->get_parameter("imu_topic", imu_topic);
-    this->get_parameter("lidar_topic", lidar_topic);
-    this->get_parameter("lidar_type", lidar_type_string);
-    this->get_parameter("time_scale", time_scale);
-    this->get_parameter("point_filter_num", point_filter_num);
-    this->get_parameter("scan_resolution", scan_resolution);
-    this->get_parameter("voxel_map_resolution", voxel_map_resolution);
-    this->get_parameter("max_iterations", max_iterations);
+    this->get_parameter("odom/imu_topic", imu_topic);
+    this->get_parameter("odom/lidar_topic", lidar_topic);
+    this->get_parameter("odom/lidar_type", lidar_type_string);
+    this->get_parameter("odom/odom_frame", odom_frame);
+    this->get_parameter("odom/robot_frame", robot_frame);    
+    this->get_parameter("odom/imu_frame", imu_frame);
+    this->get_parameter("odom/lidar_frame", lidar_frame);
+    this->get_parameter("map/map_frame", map_frame);
+
+    this->get_parameter("odom/time_scale", time_scale);
+    this->get_parameter("odom/point_filter_num", point_filter_num);
+    this->get_parameter("odom/scan_resolution", scan_resolution);
+    this->get_parameter("odom/voxel_map_resolution", voxel_map_resolution);
+    this->get_parameter("odom/max_iterations", max_iterations);
     // Retrieve the covariance and gravity parameters
-    this->get_parameter("acc_cov", acc_cov);
-    this->get_parameter("gyr_cov", gyr_cov);
-    this->get_parameter("ba_cov", ba_cov);
-    this->get_parameter("bg_cov", bg_cov);
-    this->get_parameter("init_ori_cov", init_ori_cov);
-    this->get_parameter("init_pos_cov", init_pos_cov);
-    this->get_parameter("init_vel_cov", init_vel_cov);
-    this->get_parameter("init_ba_cov", init_ba_cov);
-    this->get_parameter("init_bg_cov", init_bg_cov);
-    this->get_parameter("gravity", gravity);
+    this->get_parameter("odom/acc_cov", acc_cov);
+    this->get_parameter("odom/gyr_cov", gyr_cov);
+    this->get_parameter("odom/ba_cov", ba_cov);
+    this->get_parameter("odom/bg_cov", bg_cov);
+    this->get_parameter("odom/init_ori_cov", init_ori_cov);
+    this->get_parameter("odom/init_pos_cov", init_pos_cov);
+    this->get_parameter("odom/init_vel_cov", init_vel_cov);
+    this->get_parameter("odom/init_ba_cov", init_ba_cov);
+    this->get_parameter("odom/init_bg_cov", init_bg_cov);
+    this->get_parameter("odom/gravity", gravity);
+
+    this->get_parameter("odom/gicp_constraints_gain", gicp_constraints_gain);
+    this->get_parameter("odom/point2plane_constraints_gain", point2plane_constraints_gain);
+    this->get_parameter("odom/enable_undistort", enable_undistort);
+    this->get_parameter("odom/enable_outlier_rejection", enable_outlier_rejection);
+    this->get_parameter("odom/enable_acc_correct", enable_acc_correct);
+    this->get_parameter("odom/enable_ahrs_initalization", enable_ahrs_initalization);
+
+    // Retrieve the paramodom/eters as shown previously
+    this->get_parameter("odom/min_radius", min_radius);
+    this->get_parameter("odom/max_radius", max_radius);
+
+    this->get_parameter("extrinsics/imu2lidar/t", t_imu_lidar_v);
+    this->get_parameter("extrinsics/imu2lidar/r", R_imu_lidar_v);
+    this->get_parameter("extrinsics/robot2imu/t", robot2imu_t);
+    this->get_parameter("extrinsics/robot2imu/r", robot2imu_r);
+    this->get_parameter("extrinsics/robot2lidar/t", robot2lidar_t);
+    this->get_parameter("extrinsics/robot2lidar/r", robot2lidar_r);
 
 
-    this->get_parameter("gicp_constraints_gain", gicp_constraints_gain);
-    this->get_parameter("point2plane_constraints_gain", point2plane_constraints_gain);
-    this->get_parameter("enable_undistort", enable_undistort);
-    this->get_parameter("enable_outlier_rejection", enable_outlier_rejection);
-    this->get_parameter("enable_acc_correct", enable_acc_correct);
-    this->get_parameter("enable_ahrs_initalization", enable_ahrs_initalization);
+    
 
-
-    // Retrieve the parameters as shown previously
-    this->get_parameter("min_radius", min_radius);
-    this->get_parameter("max_radius", max_radius);
-
-
-
-
-    this->get_parameter("t_imu_lidar", t_imu_lidar_v);
-    this->get_parameter("R_imu_lidar", R_imu_lidar_v);
   }
 
   void Initialize(){
@@ -229,6 +250,20 @@ private:
     T_imu_lidar.block<3, 3>(0, 0) =
         Eigen::Map<const Eigen::Matrix<double, -1, -1, Eigen::RowMajor>>(
             R_imu_lidar_v.data(), 3, 3);
+
+    this->extrinsics.robot2imu.t = Eigen::Vector3f(robot2imu_t[0], robot2imu_t[1], robot2imu_t[2]);
+    this->extrinsics.robot2imu.R = Eigen::Map<const Eigen::Matrix<float, -1, -1, Eigen::RowMajor>>(std::vector<float>(robot2imu_r.begin(), robot2imu_r.end()).data(), 3, 3);
+    this->extrinsics.robot2imu_T = Eigen::Matrix4f::Identity();
+    this->extrinsics.robot2imu_T.block(0, 3, 3, 1) = this->extrinsics.robot2imu.t;
+    this->extrinsics.robot2imu_T.block(0, 0, 3, 3) = this->extrinsics.robot2imu.R;
+
+    this->extrinsics.robot2lidar.t = Eigen::Vector3f(robot2lidar_t[0], robot2lidar_t[1], robot2lidar_t[2]);
+    this->extrinsics.robot2lidar.R = Eigen::Map<const Eigen::Matrix<float, -1, -1, Eigen::RowMajor>>(std::vector<float>(robot2lidar_r.begin(), robot2lidar_r.end()).data(), 3, 3);
+
+    this->extrinsics.robot2lidar_T = Eigen::Matrix4f::Identity();
+    this->extrinsics.robot2lidar_T.block(0, 3, 3, 1) = this->extrinsics.robot2lidar.t;
+    this->extrinsics.robot2lidar_T.block(0, 0, 3, 3) = this->extrinsics.robot2lidar.R;
+
 
     LIO::Config lio_config;
     lio_config.acc_cov = acc_cov;
@@ -679,12 +714,14 @@ void Process() {
   // // Setp 5: Send to rviz for visualization
   Eigen::Matrix4d result_pose = lio_ptr->GetCurrentPose();
   // // odometry message
-  nav_msgs::msg::Odometry odom_msg;
-  odom_msg.header.frame_id = "world";
   auto nanosec_part = static_cast<uint32_t>((sensor_measurement.lidar_end_time_ - static_cast<uint64_t>(sensor_measurement.lidar_end_time_)) * 1e9);
   auto sec_part = static_cast<int32_t>(sensor_measurement.lidar_end_time_);
-  odom_msg.header.stamp.sec = sec_part;
-  odom_msg.header.stamp.nanosec = nanosec_part;
+  // Create or update the rclcpp::Time object
+  rclcpp::Time current_time_stamp = rclcpp::Time(sec_part, nanosec_part);
+  nav_msgs::msg::Odometry odom_msg;
+  odom_msg.header.frame_id = this->odom_frame;
+  odom_msg.child_frame_id = this->robot_frame;
+  odom_msg.header.stamp = current_time_stamp;
   Eigen::Quaterniond temp_q(result_pose.block<3, 3>(0, 0));
   odom_msg.pose.pose.orientation.x = temp_q.x();
   odom_msg.pose.pose.orientation.y = temp_q.y();
@@ -694,33 +731,8 @@ void Process() {
   odom_msg.pose.pose.position.y = result_pose(1, 3);
   odom_msg.pose.pose.position.z = result_pose(2, 3);
   odom_pub_->publish(odom_msg);
+  publishToRos(result_pose, temp_q, current_time_stamp);
 
-  // // tf message
-  geometry_msgs::msg::TransformStamped transformStamped;
-
-  transformStamped.header.stamp = odom_msg.header.stamp; 
-  transformStamped.header.frame_id = "world";
-  transformStamped.child_frame_id = "base_link";
-
-  // Set the translation
-  transformStamped.transform.translation.x = result_pose(0, 3);
-  transformStamped.transform.translation.y = result_pose(1, 3);
-  transformStamped.transform.translation.z = result_pose(2, 3);
-
-  // Set the rotation
-  tf2::Quaternion q_tf;
-  q_tf.setX(temp_q.x());
-  q_tf.setY(temp_q.y());
-  q_tf.setZ(temp_q.z());
-  q_tf.setW(temp_q.w());
-
-  transformStamped.transform.rotation.x = q_tf.x();
-  transformStamped.transform.rotation.y = q_tf.y();
-  transformStamped.transform.rotation.z = q_tf.z();
-  transformStamped.transform.rotation.w = q_tf.w();
-
-  // Send the transform
-  tf_broadcaster_->sendTransform(transformStamped);
 
   // publish dense scan
   CloudPtr trans_cloud(new CloudType());
@@ -728,7 +740,7 @@ void Process() {
       *sensor_measurement.cloud_ptr_, *trans_cloud, result_pose);
   sensor_msgs::msg::PointCloud2 scan_msg;
   pcl::toROSMsg(*trans_cloud, scan_msg);
-  scan_msg.header.frame_id = "world";
+  scan_msg.header.frame_id = this->odom_frame;
   scan_msg.header.stamp.sec = sec_part;
   scan_msg.header.stamp.nanosec = nanosec_part;
   current_scan_pub_->publish(scan_msg);
@@ -752,15 +764,15 @@ void Process() {
     pcl::transformPointCloud(*cloud_DS, *trans_cloud_DS, result_pose);
     sensor_msgs::msg::PointCloud2 keyframe_scan_msg;
     pcl::toROSMsg(*trans_cloud_DS, keyframe_scan_msg);
-    keyframe_scan_msg.header.frame_id = "world";
+    keyframe_scan_msg.header.frame_id = this->odom_frame;
     keyframe_scan_msg.header.stamp = scan_msg.header.stamp;
     keyframe_scan_pub_->publish(keyframe_scan_msg);
     // publich path
     path_array.header.stamp = scan_msg.header.stamp;
-    path_array.header.frame_id = "world";
+    path_array.header.frame_id = this->odom_frame;
     geometry_msgs::msg::PoseStamped pose_stamped;
     pose_stamped.header.stamp = scan_msg.header.stamp;
-    pose_stamped.header.frame_id = "world";
+    pose_stamped.header.frame_id = this->odom_frame;
     pose_stamped.pose.position.x = result_pose(0, 3);
     pose_stamped.pose.position.y = result_pose(1, 3);
     pose_stamped.pose.position.z = result_pose(2, 3);
@@ -770,6 +782,8 @@ void Process() {
     pose_stamped.pose.orientation.z = temp_q.z();
     path_array.poses.push_back(pose_stamped);
     path_pub_->publish(path_array);
+
+    
   }
 
   // Setp 6: Save trajectory for evo evaluation
@@ -795,7 +809,71 @@ void Process() {
   }
 
 
+  void publishToRos(Eigen::Matrix4d& result_pose, Eigen::Quaterniond& temp_q, rclcpp::Time& current_time_stamp){
 
+    // transform: odom to robot_frame
+    geometry_msgs::msg::TransformStamped transformStamped;
+
+    transformStamped.header.stamp = current_time_stamp; 
+    transformStamped.header.frame_id = this->odom_frame;
+    transformStamped.child_frame_id = this->robot_frame;
+
+    // Set the translation
+    transformStamped.transform.translation.x = result_pose(0, 3);
+    transformStamped.transform.translation.y = result_pose(1, 3);
+    transformStamped.transform.translation.z = result_pose(2, 3);
+
+    // Set the rotation
+    tf2::Quaternion q_tf;
+    q_tf.setX(temp_q.x());
+    q_tf.setY(temp_q.y());
+    q_tf.setZ(temp_q.z());
+    q_tf.setW(temp_q.w());
+
+    transformStamped.transform.rotation.x = q_tf.x();
+    transformStamped.transform.rotation.y = q_tf.y();
+    transformStamped.transform.rotation.z = q_tf.z();
+    transformStamped.transform.rotation.w = q_tf.w();
+
+    // Send the transform
+    tf_broadcaster_->sendTransform(transformStamped);
+
+    // transform: robot to imu
+    transformStamped.header.stamp = current_time_stamp;
+    transformStamped.header.frame_id = this->robot_frame;
+    transformStamped.child_frame_id = this->imu_frame;
+
+    transformStamped.transform.translation.x = this->extrinsics.robot2imu.t[0];
+    transformStamped.transform.translation.y = this->extrinsics.robot2imu.t[1];
+    transformStamped.transform.translation.z = this->extrinsics.robot2imu.t[2];
+
+    Eigen::Quaternionf q(this->extrinsics.robot2imu.R);
+    transformStamped.transform.rotation.w = q.w();
+    transformStamped.transform.rotation.x = q.x();
+    transformStamped.transform.rotation.y = q.y();
+    transformStamped.transform.rotation.z = q.z();
+
+    tf_broadcaster_->sendTransform(transformStamped);
+
+
+    // transform: robot to lidar
+    transformStamped.header.stamp = current_time_stamp;
+    transformStamped.header.frame_id = this->robot_frame;
+    transformStamped.child_frame_id = this->lidar_frame;
+
+    transformStamped.transform.translation.x = this->extrinsics.robot2lidar.t[0];
+    transformStamped.transform.translation.y = this->extrinsics.robot2lidar.t[1];
+    transformStamped.transform.translation.z = this->extrinsics.robot2lidar.t[2];
+    
+
+    Eigen::Quaternionf qq(this->extrinsics.robot2lidar.R);
+    transformStamped.transform.rotation.w = qq.w();
+    transformStamped.transform.rotation.x = qq.x();
+    transformStamped.transform.rotation.y = qq.y();
+    transformStamped.transform.rotation.z = qq.z();
+
+    tf_broadcaster_->sendTransform(transformStamped);
+  }
 
 
 
@@ -823,6 +901,11 @@ void Process() {
   std::string imu_topic;
   std::string lidar_topic;
   std::string lidar_type_string;
+  std::string odom_frame;
+  std::string robot_frame;
+  std::string imu_frame;
+  std::string lidar_frame;
+  std::string map_frame;
   LidarType lidar_type_ = LidarType::LIVOX;
   bool enable_acc_correct;
   bool enable_undistort;
@@ -850,7 +933,8 @@ void Process() {
   std::deque<std::pair<double, pcl::PointCloud<PointType>::Ptr>> cloud_buff;
   std::deque<sensor_msgs::msg::Imu> imu_buff;
   std::deque<nav_msgs::msg::Odometry> gnss_buff;
-  std::vector<double> t_imu_lidar_v, R_imu_lidar_v;
+  std::vector<double> t_imu_lidar_v, R_imu_lidar_v; 
+  std::vector<double> robot2imu_t, robot2imu_r, robot2lidar_t, robot2lidar_r; 
   std::string package_path_;
   // Set default values for t_imu_lidar and R_imu_lidar
   std::vector<double> default_t_imu_lidar = {0.0, 0.0, 0.0};
@@ -870,7 +954,16 @@ void Process() {
   std::shared_ptr<PointCloudPreprocess> cloud_preprocess_ptr_;
   
   std::thread processing_thread_;
-  
+  struct Extrinsics {
+    struct SE3 {
+      Eigen::Vector3f t;
+      Eigen::Matrix3f R;
+    };
+    SE3 robot2imu;
+    SE3 robot2lidar;
+    Eigen::Matrix4f robot2imu_T;
+    Eigen::Matrix4f robot2lidar_T;
+  }; Extrinsics extrinsics;
 };
 
 int main(int argc, char **argv) {
