@@ -97,6 +97,7 @@ class LIO {
   }
 
   bool MeasurementUpdate(SensorMeasurement& sensor_measurement);
+  Eigen::Matrix3d correctRotationMatrix(const Eigen::Matrix3d& R);
 
   bool Predict(const double time,
                const Eigen::Vector3d& acc_1,
@@ -208,7 +209,6 @@ class LIO {
   double ConstructImuPriorConstraints(Eigen::Matrix<double, 15, 15>& H,
                                       Eigen::Matrix<double, 15, 1>& b);
 
-  Eigen::Matrix3d correctRotationMatrix(const Eigen::Matrix3d& R);
   double ComputeError(const SensorMeasurement& sensor_measurement,
                       const State& state);
 

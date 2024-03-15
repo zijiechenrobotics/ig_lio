@@ -132,7 +132,7 @@ private:
     this->declare_parameter<double>("odom/point2plane_constraints_gain", 1000.0);
     this->declare_parameter<bool>("odom/enable_undistort", true);
     this->declare_parameter<bool>("odom/enable_outlier_rejection", true);
-    this->declare_parameter<bool>("odom/enable_acc_correct", true);
+    this->declare_parameter<bool>("odom/enable_acc_correct", false);
     this->declare_parameter<bool>("odom/enable_ahrs_initalization", true);
     // Declare and get parameters for min and max radius
     this->declare_parameter<double>("odom/min_radius", 1.0);
@@ -674,7 +674,6 @@ void Process() {
   }
 
   // Step 3: Prediction
-  LOG(INFO) << "start prediction" << std::endl;
   for (size_t i = 0; i < sensor_measurement.imu_buff_.size(); ++i) {
     double time;
     if (i == sensor_measurement.imu_buff_.size() - 1) {
@@ -700,7 +699,6 @@ void Process() {
   }
 
   // Setp 4: Measurement Update
-  LOG(INFO) << "start Measurement Update" << std::endl;
   timer.Evaluate([&] { lio_ptr->MeasurementUpdate(sensor_measurement); },
                  "measurement update");
 
@@ -713,6 +711,7 @@ void Process() {
 
   // // Setp 5: Send to rviz for visualization
   Eigen::Matrix4d result_pose = lio_ptr->GetCurrentPose();
+
   // // odometry message
   auto nanosec_part = static_cast<uint32_t>((sensor_measurement.lidar_end_time_ - static_cast<uint64_t>(sensor_measurement.lidar_end_time_)) * 1e9);
   auto sec_part = static_cast<int32_t>(sensor_measurement.lidar_end_time_);
@@ -748,8 +747,12 @@ void Process() {
   static bool is_first_keyframe = true;
   static Eigen::Matrix4d last_keyframe = result_pose;
   Eigen::Matrix4d delta_p = last_keyframe.inverse() * result_pose;
+  // double norm_ = Sophus::SO3d(delta_p.block<3, 3>(0, 0)).log().norm();
+  double norm_ = Sophus::SO3d(lio_ptr->correctRotationMatrix(delta_p.block<3, 3>(0, 0))).log().norm();
   if (is_first_keyframe || delta_p.block<3, 1>(0, 3).norm() > 1.0 ||
-      Sophus::SO3d(delta_p.block<3, 3>(0, 0)).log().norm() > 0.18) {
+      norm_ > 0.18) {
+          LOG(INFO) << "Done checking delta p" << std::endl;
+
     if (is_first_keyframe) {
       is_first_keyframe = false;
     }

@@ -33,11 +33,17 @@ private:
         this->get_parameter("map/map_name", this->map_name_);
         this->declare_parameter<std::string>("map/map_frame", "world");
         this->get_parameter("map/map_frame", this->map_frame_);
+                this->declare_parameter<double>("map/leaf_size", 0.5);
+        this->get_parameter("map/leaf_size", this->leaf_size_);
     }
 
     void keyframeCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
         pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>());
         pcl::fromROSMsg(*msg, *cloud);
+        // voxel filter
+        this->voxelgrid.setLeafSize(this->leaf_size_, this->leaf_size_, this->leaf_size_);
+        this->voxelgrid.setInputCloud(cloud);
+        this->voxelgrid.filter(*cloud);
         *this->ig_lio_map += *cloud;
 
         sensor_msgs::msg::PointCloud2 world_ros;
@@ -63,9 +69,11 @@ private:
     rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr save_map_service_;
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr world_pub;
     pcl::PointCloud<pcl::PointXYZ>::Ptr ig_lio_map;
+    pcl::VoxelGrid<pcl::PointXYZ> voxelgrid;
     std::string save_map_path_;
     std::string map_frame_;
     std::string map_name_;
+    double leaf_size_;
 };
 
 int main(int argc, char **argv) {
