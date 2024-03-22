@@ -5,25 +5,6 @@ Timer timer;
 
 bool LIO::MeasurementUpdate(SensorMeasurement& sensor_measurement) {
   if (sensor_measurement.measurement_type_ == MeasurementType::LIDAR) {
-    LOG(INFO) << "The size of original cloud is " << sensor_measurement.cloud_ptr_->size() << std::endl;
-
-    // // range filter
-    // CloudPtr filtered_cloud_ptr(new CloudType());
-    
-    // filtered_cloud_ptr->points.reserve(sensor_measurement.cloud_ptr_->size());
-    // for (const auto& pt : sensor_measurement.cloud_ptr_->points) {
-    //   if (InRadius(pt)) {
-    //     filtered_cloud_ptr->points.emplace_back(pt);
-    //   }
-    // }
-
-    // //If I use this,  Floating point exception happens...
-    // sensor_measurement.cloud_ptr_->clear();
-    // sensor_measurement.cloud_ptr_ = filtered_cloud_ptr;
-    // LOG(INFO) << "The size of filtered cloud is " << filtered_cloud_ptr->size() << std::endl;
-    // for (const auto& pt : sensor_measurement.cloud_ptr_->points) {
-    //     std::cout << "Point: (" << pt.x << ", " << pt.y << ", " << pt.z << ")" << std::endl;
-    // }
     timer.Evaluate(
         [&, this]() {
           // transform scan from lidar's frame to imu's frame
@@ -124,13 +105,131 @@ bool LIO::MeasurementUpdate(SensorMeasurement& sensor_measurement) {
 
   ava_effect_feat_num_ += (effect_feat_num_ - ava_effect_feat_num_) /
                           static_cast<double>(lidar_frame_count_);
-  LOG(INFO) << "curr_feat_num: " << effect_feat_num_
-            << " ava_feat_num: " << ava_effect_feat_num_
-            << " keyframe_count: " << keyframe_count_
-            << " lidar_frame_count: " << lidar_frame_count_
-            << " grid_size: " << voxel_map_ptr_->GetVoxelMapSize();
+//   LOG(INFO) << "curr_feat_num: " << effect_feat_num_
+//             << " ava_feat_num: " << ava_effect_feat_num_
+//             << " keyframe_count: " << keyframe_count_
+//             << " lidar_frame_count: " << lidar_frame_count_
+//             << " grid_size: " << voxel_map_ptr_->GetVoxelMapSize();
   return true;
 }
+
+// bool LIO::MeasurementUpdateForReloc(SensorMeasurement& sensor_measurement) {
+//     LOG(INFO) << "The size of original cloud is " << sensor_measurement.cloud_ptr_->size() << std::endl;
+//     // timer.Evaluate(
+//     //     [&, this]() {
+//     //       // transform scan from lidar's frame to imu's frame
+//     //       sensor_measurement.cloud_ptr_;
+//     //       // undistort
+//     //       if (config_.enable_undistort) {
+//     //         UndistortPointCloud(sensor_measurement.bag_time_,
+//     //                             sensor_measurement.lidar_end_time_,
+//     //                             sensor_measurement.cloud_ptr_);
+//     //       }
+//     //     },
+//     //     "undistort");
+
+//     // timer.Evaluate(
+//     //     [&, this]() {
+//     //       fast_voxel_grid_ptr_->Filter(
+//     //           sensor_measurement.cloud_ptr_, cloud_DS_ptr_, cloud_cov_ptr_);
+//     //     },
+//     //     "downsample");
+
+//   // Make sure the local map is dense enough to measurement update
+//   if (lidar_frame_count_ <= 10) {
+//     CloudPtr trans_cloud_ptr(new CloudType());
+//     pcl::transformPointCloud(
+//         *sensor_measurement.cloud_ptr_, *trans_cloud_ptr, curr_state_.pose);
+//     voxel_map_ptr_->AddCloud(trans_cloud_ptr);
+//     lidar_frame_count_++;
+//     return true;
+//   }
+
+//   // measurement update
+//   prev_state_ = curr_state_;
+//   iter_num_ = 0;
+//   need_converge_ = false;
+//   Eigen::Matrix<double, 15, 1> delta_x = Eigen::Matrix<double, 15, 1>::Zero();
+//   while (iter_num_ < config_.max_iterations) {
+//     double y0_lidar = 0;
+//     timer.Evaluate(
+//         [&, this]() {
+//         // After LIO has moved some distance, each voxel is already well
+//         // formulate
+//         // the surrounding environments
+//         if (keyframe_count_ > 20) {
+//             y0_lidar = ConstructGICPConstraints(H, b);
+//         }
+//         // In the initial state, the probability of each voxel is poor
+//         // use point-to-plane instead of GICP
+//         else {
+//             y0_lidar = ConstructPoint2PlaneConstraints(H, b);
+//         }
+//         },
+//         "lidar constraints");
+
+//     if (IsConverged(delta_x)) {
+//       // Optimization convergence, exit
+//       break;
+//     } else {
+//       // The first three iterations perform KNN, then no longer perform, thus
+//       // accelerating the problem convergence
+//       if (iter_num_ < 3) {
+//         need_converge_ = false;
+//       } else {
+//         need_converge_ = true;
+//       }
+//     }
+
+//     iter_num_++;
+//   }
+
+// //   LOG(INFO) << "final hessian: " << std::endl << final_hessian_;
+//   // P_ = final_hessian_.inverse();
+//   ComputeFinalCovariance(delta_x);
+//   prev_state_ = curr_state_;
+
+//   timer.Evaluate(
+//       [&, this]() {
+//         if (lidar_frame_count_ < 10) {
+//           CloudPtr trans_cloud_ptr(new CloudType());
+//           pcl::transformPointCloud(*sensor_measurement.cloud_ptr_,
+//                                    *trans_cloud_ptr,
+//                                    curr_state_.pose);
+//           voxel_map_ptr_->AddCloud(trans_cloud_ptr);
+
+//           last_keyframe_pose_ = curr_state_.pose;
+//         } else {
+//           Eigen::Matrix4d delta_p =
+//               last_keyframe_pose_.inverse() * curr_state_.pose;
+//           // The keyframe strategy ensures an appropriate spatial pattern of the
+//           // points in each voxel
+//           if (effect_feat_num_ < 1000 ||
+//               delta_p.block<3, 1>(0, 3).norm() > 0.5 ||
+//               Sophus::SO3d(delta_p.block<3, 3>(0, 0)).log().norm() > 0.18) {
+//             CloudPtr trans_cloud_DS_ptr(new CloudType());
+//             pcl::transformPointCloud(
+//                 *cloud_DS_ptr_, *trans_cloud_DS_ptr, curr_state_.pose);
+//             voxel_map_ptr_->AddCloud(trans_cloud_DS_ptr);
+
+//             last_keyframe_pose_ = curr_state_.pose;
+//             keyframe_count_++;
+//           }
+//         }
+//       },
+//       "update voxel map");
+
+//   lidar_frame_count_++;
+
+//   ava_effect_feat_num_ += (effect_feat_num_ - ava_effect_feat_num_) /
+//                           static_cast<double>(lidar_frame_count_);
+//   LOG(INFO) << "curr_feat_num: " << effect_feat_num_
+//             << " ava_feat_num: " << ava_effect_feat_num_
+//             << " keyframe_count: " << keyframe_count_
+//             << " lidar_frame_count: " << lidar_frame_count_
+//             << " grid_size: " << voxel_map_ptr_->GetVoxelMapSize();
+//   return true;
+// }
 
 bool LIO::StepOptimize(const SensorMeasurement& sensor_measurement,
                        Eigen::Matrix<double, 15, 1>& delta_x) {

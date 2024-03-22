@@ -59,6 +59,6 @@
                             0.0,  0.0, 1.0 ]
 
     #for map
-    map/save_map_path: /home/user/humble_ws #do not put / at the end of line
+    map/map_location: /home/user/humble_ws/src/ig_lio/maps #do not put / at the end of line
     map/map_name: test
     map/map_frame: odom

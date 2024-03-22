@@ -63,6 +63,17 @@ add_executable(${PROJECT_NAME}_node
 )
 
 # Declare a C++ executable
+add_executable(${PROJECT_NAME}_keyframe_node
+  src/keyframe.cpp
+  src/pointcloud_preprocess.cpp
+  src/lio.cpp
+  src/voxel_map.cpp
+  src/SymmetricEigenSolver.cpp
+  src/timer.cpp
+  src/faster_voxel_grid.cpp
+)
+
+# Declare a C++ executable
 add_executable(${PROJECT_NAME}_map_node
   src/map.cpp
 )
@@ -79,6 +90,10 @@ ament_target_dependencies(${PROJECT_NAME}_node
 ament_target_dependencies(${PROJECT_NAME}_map_node
   ${dependencies}
 )
+# Specify libraries to link a library or executable target against
+ament_target_dependencies(${PROJECT_NAME}_keyframe_node
+  ${dependencies}
+)
 
 target_link_libraries(${PROJECT_NAME}_node
   ${PCL_LIBRARIES}
@@ -92,9 +107,15 @@ target_link_libraries(${PROJECT_NAME}_map_node
   glog
   gflags
 )
+target_link_libraries(${PROJECT_NAME}_keyframe_node
+  ${PCL_LIBRARIES}
+  ${TBB_LIBRARIES}
+  glog
+  gflags
+)
 
 # Install the executable
-install(TARGETS ${PROJECT_NAME}_node ${PROJECT_NAME}_map_node
+install(TARGETS ${PROJECT_NAME}_node ${PROJECT_NAME}_map_node ${PROJECT_NAME}_keyframe_node
   DESTINATION lib/${PROJECT_NAME}
 )
 

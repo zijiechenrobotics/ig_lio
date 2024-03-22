@@ -137,6 +137,7 @@ private:
     // Declare and get parameters for min and max radius
     this->declare_parameter<double>("odom/min_radius", 1.0);
     this->declare_parameter<double>("odom/max_radius", 150.0);
+    this->declare_parameter<bool>("odom/debug", false);
 
     // For vector parameters like extrinsic, it's a bit more complex
     // Declare and get extrinsic parameters (vectors)
@@ -189,6 +190,7 @@ private:
     // Retrieve the paramodom/eters as shown previously
     this->get_parameter("odom/min_radius", min_radius);
     this->get_parameter("odom/max_radius", max_radius);
+    this->get_parameter("odom/debug", debug_);
 
     this->get_parameter("extrinsics/imu2lidar/t", t_imu_lidar_v);
     this->get_parameter("extrinsics/imu2lidar/r", R_imu_lidar_v);
@@ -701,13 +703,15 @@ void Process() {
   // Setp 4: Measurement Update
   timer.Evaluate([&] { lio_ptr->MeasurementUpdate(sensor_measurement); },
                  "measurement update");
-
-  LOG(INFO) << "iter_num: " << lio_ptr->GetFinalIterations() << std::endl
+  if (debug_){
+      LOG(INFO) << "iter_num: " << lio_ptr->GetFinalIterations() << std::endl
             << "ba: " << lio_ptr->GetCurrentBa().transpose()
             << " ba_norm: " << lio_ptr->GetCurrentBa().norm()
             << " bg: " << lio_ptr->GetCurrentBg().transpose() * 180.0 / M_PI
             << " bg_norm: " << lio_ptr->GetCurrentBg().norm() * 180.0 / M_PI
             << std::endl;
+  }
+
 
   // // Setp 5: Send to rviz for visualization
   Eigen::Matrix4d result_pose = lio_ptr->GetCurrentPose();
@@ -751,7 +755,8 @@ void Process() {
   double norm_ = Sophus::SO3d(lio_ptr->correctRotationMatrix(delta_p.block<3, 3>(0, 0))).log().norm();
   if (is_first_keyframe || delta_p.block<3, 1>(0, 3).norm() > 1.0 ||
       norm_ > 0.18) {
-          LOG(INFO) << "Done checking delta p" << std::endl;
+          if (debug_)
+            LOG(INFO) << "Done checking delta p" << std::endl;
 
     if (is_first_keyframe) {
       is_first_keyframe = false;
@@ -928,7 +933,7 @@ void Process() {
   double gicp_constraints_gain;
   double point2plane_constraints_gain;
   bool enable_outlier_rejection;
-  
+  bool debug_;
   double scan_resolution, voxel_map_resolution;
   int max_iterations;
   double min_radius, max_radius;

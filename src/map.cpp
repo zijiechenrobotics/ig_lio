@@ -27,8 +27,8 @@ private:
     void getParams() {
         
         
-        this->declare_parameter<std::string>("map/save_map_path", "/");
-        this->get_parameter("map/save_map_path", this->save_map_path_);
+        this->declare_parameter<std::string>("map/map_location", "/");
+        this->get_parameter("map/map_location", this->map_location_);
         this->declare_parameter<std::string>("map/map_name", "ig_lio_map");
         this->get_parameter("map/map_name", this->map_name_);
         this->declare_parameter<std::string>("map/map_frame", "world");
@@ -55,7 +55,7 @@ private:
 
     void saveMapService(const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
                         std::shared_ptr<std_srvs::srv::Trigger::Response> response) {
-        std::string file_path = this->save_map_path_ + "/" + this->map_name_+ ".pcd";
+        std::string file_path = this->map_location_ + "/" + this->map_name_+ ".pcd";
         if (pcl::io::savePCDFileBinary(file_path, *this->ig_lio_map) == 0) {
             response->success = true;
             response->message = "Map saved successfully to " + file_path;
@@ -70,7 +70,7 @@ private:
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr world_pub;
     pcl::PointCloud<pcl::PointXYZ>::Ptr ig_lio_map;
     pcl::VoxelGrid<pcl::PointXYZ> voxelgrid;
-    std::string save_map_path_;
+    std::string map_location_;
     std::string map_frame_;
     std::string map_name_;
     double leaf_size_;
