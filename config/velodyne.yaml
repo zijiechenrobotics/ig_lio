@@ -16,7 +16,7 @@
     odom/max_radius: 150.0
     odom/point_filter_num: 6
     odom/time_scale: 1000.0 # nclt: 0.001 other: 1000.0
-    odom/enable_ahrs_initalization: true
+    odom/enable_ahrs_initalization: false
     odom/enable_acc_correct: false
 
     odom/scan_resolution: 0.5
@@ -60,5 +60,5 @@
 
     #for map
     map/map_location: /home/user/humble_ws/src/ig_lio/maps #do not put / at the end of line
-    map/map_name: test
+    map/map_name: test1
     map/map_frame: odom

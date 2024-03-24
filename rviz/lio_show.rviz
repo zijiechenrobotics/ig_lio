@@ -8,6 +8,7 @@ Panels:
         - /Status1
         - /PointCloud21
         - /Axes1
+        - /TF1
       Splitter Ratio: 0.5
     Tree Height: 539
   - Class: rviz_common/Selection
@@ -52,8 +53,8 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 25.742103576660156
-        Min Value: -4.909287929534912
+        Max Value: 25.37679100036621
+        Min Value: -4.814680576324463
         Value: true
       Axis: Z
       Channel Name: intensity
@@ -131,11 +132,11 @@ Visualization Manager:
           Value: true
         velodyne:
           Value: true
-      Marker Scale: 1
+      Marker Scale: 10
       Name: TF
       Show Arrows: true
       Show Axes: true
-      Show Names: false
+      Show Names: true
       Tree:
         odom:
           base_link:
@@ -188,7 +189,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 102.87923431396484
+      Distance: 82.98785400390625
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -224,5 +225,5 @@ Window Geometry:
   Views:
     collapsed: true
   Width: 1370
-  X: 344
-  Y: 158
+  X: 70
+  Y: 27

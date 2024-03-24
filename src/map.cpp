@@ -31,7 +31,7 @@ private:
         this->get_parameter("map/map_location", this->map_location_);
         this->declare_parameter<std::string>("map/map_name", "ig_lio_map");
         this->get_parameter("map/map_name", this->map_name_);
-        this->declare_parameter<std::string>("map/map_frame", "world");
+        this->declare_parameter<std::string>("map/map_frame", "odom");
         this->get_parameter("map/map_frame", this->map_frame_);
                 this->declare_parameter<double>("map/leaf_size", 0.5);
         this->get_parameter("map/leaf_size", this->leaf_size_);
