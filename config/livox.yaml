@@ -3,8 +3,8 @@
     #for odom
 
     #topic names 
-    odom/lidar_topic: /livox/lidar #/points_raw
-    odom/imu_topic: /livox/imu #/imu_correct
+    odom/lidar_topic: /livox/lidar_custom #/points_raw
+    odom/imu_topic: /livox/imu_custom #/imu_correct
     odom/lidar_type: livox # livox velodyne ouster
 
     #frames
@@ -12,10 +12,10 @@
     odom/robot_frame: base_link
     odom/imu_frame: livox_frame
     odom/lidar_frame: livox_frame
-    odom/min_radius: 0.3
+    odom/min_radius: 0.1
     odom/max_radius: 150.0
     odom/point_filter_num: 6
-    odom/time_scale: 1000.0 # nclt: 0.001 other: 1000.0
+    odom/time_scale: 1.0 # nclt: 0.001 other: 1000.0
     odom/enable_ahrs_initalization: false
     odom/enable_acc_correct: true
 
@@ -59,6 +59,6 @@
                             0.0,  0.0, 1.0 ]
 
     #for map
-    map/save_map_path: /home/user/humble_ws #do not put / at the end of line
+    map/map_location: /home/user/humble_ws/src/ig_lio/maps #do not put / at the end of line
     map/map_name: test
     map/map_frame: odom
