@@ -3,23 +3,23 @@
     #for odom
 
     #topic names 
-    odom/lidar_topic: /points_raw
+    odom/lidar_topic: /livox/lidar_custom #/points_raw
     odom/imu_topic: /imu/data2 #/imu_correct
-    odom/lidar_type: velodyne # livox velodyne ouster
+    odom/lidar_type: livox # livox velodyne ouster
 
     #frames
     odom/odom_frame: odom
     odom/robot_frame: base_link
     odom/imu_frame: imu_link
-    odom/lidar_frame: velodyne
+    odom/lidar_frame: livox_frame
     odom/min_radius: 0.1
-    odom/max_radius: 150.0
+    odom/max_radius: 20.0
     odom/point_filter_num: 6
     odom/time_scale: 1.0 # nclt: 0.001 other: 1000.0
     odom/enable_ahrs_initalization: true
     odom/enable_acc_correct: false
 
-    odom/scan_resolution: 0.2
+    odom/scan_resolution: 0.3
     odom/voxel_map_resolution: 0.5
     odom/max_iterations: 10
 
@@ -59,6 +59,6 @@
                             0.0,  0.0, 1.0 ]
 
     #for map
-    map/save_map_path: /home/agilex/humble_ws #do not put / at the end of line
-    map/map_name: jfe
+    map/save_map_path: /home/user/humble_ws #do not put / at the end of line
+    map/map_name: test
     map/map_frame: odom
