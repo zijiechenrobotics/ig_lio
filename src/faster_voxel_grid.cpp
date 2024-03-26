@@ -119,10 +119,10 @@ void FasterVoxelGrid::Filter(const CloudPtr& input_cloud_ptr,
   ava_precent_ +=
       (current_precent - ava_precent_) / static_cast<double>(frame_count_);
 
-  LOG(INFO) << "point with cov size: " << point_with_cov_count
-            << " total points: " << cloud_cov_ptr->size()
-            << " precent: " << current_precent
-            << ", ava_precent: " << ava_precent_;
+  // LOG(INFO) << "point with cov size: " << point_with_cov_count
+  //           << " total points: " << cloud_cov_ptr->size()
+  //           << " precent: " << current_precent
+  //           << ", ava_precent: " << ava_precent_;
 
   // reset voxel_map and voxel_array
   voxel_array_ptr_->clear();

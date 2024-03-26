@@ -99,6 +99,7 @@ private:
 
   void DeclareParams(){
     // Initialize publishers, subscribers, parameters, etc.
+    this->declare_parameter<bool>("odom/sendTF", true);
     this->declare_parameter<std::string>("odom/imu_topic", "imu/data");
     this->declare_parameter<std::string>("odom/lidar_topic", "velodyne_points");
     this->declare_parameter<std::string>("odom/lidar_type", "velodyne");
@@ -137,6 +138,7 @@ private:
     // Declare and get parameters for min and max radius
     this->declare_parameter<double>("odom/min_radius", 1.0);
     this->declare_parameter<double>("odom/max_radius", 150.0);
+    this->declare_parameter<bool>("odom/debug", false);
 
     // For vector parameters like extrinsic, it's a bit more complex
     // Declare and get extrinsic parameters (vectors)
@@ -153,6 +155,7 @@ private:
   }
 
   void GetParams(){
+    this->get_parameter("odom/sendTF", sendTF);
     this->get_parameter("odom/imu_topic", imu_topic);
     this->get_parameter("odom/lidar_topic", lidar_topic);
     this->get_parameter("odom/lidar_type", lidar_type_string);
@@ -189,6 +192,7 @@ private:
     // Retrieve the paramodom/eters as shown previously
     this->get_parameter("odom/min_radius", min_radius);
     this->get_parameter("odom/max_radius", max_radius);
+    this->get_parameter("odom/debug", debug_);
 
     this->get_parameter("extrinsics/imu2lidar/t", t_imu_lidar_v);
     this->get_parameter("extrinsics/imu2lidar/r", R_imu_lidar_v);
@@ -701,13 +705,15 @@ void Process() {
   // Setp 4: Measurement Update
   timer.Evaluate([&] { lio_ptr->MeasurementUpdate(sensor_measurement); },
                  "measurement update");
-
-  LOG(INFO) << "iter_num: " << lio_ptr->GetFinalIterations() << std::endl
+  if (debug_){
+      LOG(INFO) << "iter_num: " << lio_ptr->GetFinalIterations() << std::endl
             << "ba: " << lio_ptr->GetCurrentBa().transpose()
             << " ba_norm: " << lio_ptr->GetCurrentBa().norm()
             << " bg: " << lio_ptr->GetCurrentBg().transpose() * 180.0 / M_PI
             << " bg_norm: " << lio_ptr->GetCurrentBg().norm() * 180.0 / M_PI
             << std::endl;
+  }
+
 
   // // Setp 5: Send to rviz for visualization
   Eigen::Matrix4d result_pose = lio_ptr->GetCurrentPose();
@@ -730,7 +736,38 @@ void Process() {
   odom_msg.pose.pose.position.y = result_pose(1, 3);
   odom_msg.pose.pose.position.z = result_pose(2, 3);
   odom_pub_->publish(odom_msg);
-  publishToRos(result_pose, temp_q, current_time_stamp);
+
+  // transform: odom to robot_frame
+  geometry_msgs::msg::TransformStamped transformStamped;
+
+  transformStamped.header.stamp    = current_time_stamp; 
+  transformStamped.header.frame_id = this->odom_frame;
+  transformStamped.child_frame_id  = this->robot_frame;
+
+  // Set the translation
+  transformStamped.transform.translation.x = result_pose(0, 3);
+  transformStamped.transform.translation.y = result_pose(1, 3);
+  transformStamped.transform.translation.z = result_pose(2, 3);
+
+  // Set the rotation
+  tf2::Quaternion q_tf;
+  q_tf.setX(temp_q.x());
+  q_tf.setY(temp_q.y());
+  q_tf.setZ(temp_q.z());
+  q_tf.setW(temp_q.w());
+
+  transformStamped.transform.rotation.x = q_tf.x();
+  transformStamped.transform.rotation.y = q_tf.y();
+  transformStamped.transform.rotation.z = q_tf.z();
+  transformStamped.transform.rotation.w = q_tf.w();
+
+  // Send the transform
+  tf_broadcaster_->sendTransform(transformStamped);
+
+
+
+  if (sendTF)
+    publishToRos(result_pose, temp_q, current_time_stamp);
 
 
   // publish dense scan
@@ -751,7 +788,8 @@ void Process() {
   double norm_ = Sophus::SO3d(lio_ptr->correctRotationMatrix(delta_p.block<3, 3>(0, 0))).log().norm();
   if (is_first_keyframe || delta_p.block<3, 1>(0, 3).norm() > 1.0 ||
       norm_ > 0.18) {
-          LOG(INFO) << "Done checking delta p" << std::endl;
+          if (debug_)
+            LOG(INFO) << "Done checking delta p" << std::endl;
 
     if (is_first_keyframe) {
       is_first_keyframe = false;
@@ -814,34 +852,9 @@ void Process() {
 
   void publishToRos(Eigen::Matrix4d& result_pose, Eigen::Quaterniond& temp_q, rclcpp::Time& current_time_stamp){
 
-    // transform: odom to robot_frame
-    geometry_msgs::msg::TransformStamped transformStamped;
-
-    transformStamped.header.stamp = current_time_stamp; 
-    transformStamped.header.frame_id = this->odom_frame;
-    transformStamped.child_frame_id = this->robot_frame;
-
-    // Set the translation
-    transformStamped.transform.translation.x = result_pose(0, 3);
-    transformStamped.transform.translation.y = result_pose(1, 3);
-    transformStamped.transform.translation.z = result_pose(2, 3);
-
-    // Set the rotation
-    tf2::Quaternion q_tf;
-    q_tf.setX(temp_q.x());
-    q_tf.setY(temp_q.y());
-    q_tf.setZ(temp_q.z());
-    q_tf.setW(temp_q.w());
-
-    transformStamped.transform.rotation.x = q_tf.x();
-    transformStamped.transform.rotation.y = q_tf.y();
-    transformStamped.transform.rotation.z = q_tf.z();
-    transformStamped.transform.rotation.w = q_tf.w();
-
-    // Send the transform
-    tf_broadcaster_->sendTransform(transformStamped);
 
     // transform: robot to imu
+    geometry_msgs::msg::TransformStamped transformStamped;
     transformStamped.header.stamp = current_time_stamp;
     transformStamped.header.frame_id = this->robot_frame;
     transformStamped.child_frame_id = this->imu_frame;
@@ -913,6 +926,7 @@ void Process() {
   bool enable_acc_correct;
   bool enable_undistort;
   bool enable_ahrs_initalization;
+  bool sendTF;
   Eigen::Matrix4d T_imu_lidar;
 
   // parameters used to synchronize livox time with the external imu
@@ -928,7 +942,7 @@ void Process() {
   double gicp_constraints_gain;
   double point2plane_constraints_gain;
   bool enable_outlier_rejection;
-  
+  bool debug_;
   double scan_resolution, voxel_map_resolution;
   int max_iterations;
   double min_radius, max_radius;

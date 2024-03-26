@@ -32,7 +32,7 @@ Logger::Logger(char** argv, std::string current_path) {
   google::InitGoogleLogging(argv[0]);
   FLAGS_colorlogtostderr = true;
   FLAGS_logbufsecs = 0;
-  FLAGS_max_log_size = 100;
+  // FLAGS_max_log_size = 100;
   FLAGS_stop_logging_if_full_disk = true;
   FLAGS_alsologtostderr = true;
   FLAGS_log_prefix = true;
@@ -52,7 +52,7 @@ Logger::Logger(int argc, char** argv) {
 
   FLAGS_colorlogtostderr = true;
   FLAGS_logbufsecs = 0;
-  FLAGS_max_log_size = 100;
+  // FLAGS_max_log_size = 100;
   FLAGS_stop_logging_if_full_disk = true;
   FLAGS_alsologtostderr = true;
   FLAGS_log_prefix = true;
@@ -75,7 +75,7 @@ Logger::Logger(int argc, char** argv, std::string current_path) {
 
   FLAGS_colorlogtostderr = true;
   FLAGS_logbufsecs = 0;
-  FLAGS_max_log_size = 100;
+  // FLAGS_max_log_size = 100;
   FLAGS_stop_logging_if_full_disk = true;
   FLAGS_alsologtostderr = true;
   FLAGS_log_prefix = true;

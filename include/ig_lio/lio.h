@@ -97,6 +97,7 @@ class LIO {
   }
 
   bool MeasurementUpdate(SensorMeasurement& sensor_measurement);
+  bool MeasurementUpdateForReloc(SensorMeasurement& sensor_measurement);
   Eigen::Matrix3d correctRotationMatrix(const Eigen::Matrix3d& R);
 
   bool Predict(const double time,

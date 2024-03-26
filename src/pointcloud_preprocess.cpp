@@ -52,7 +52,6 @@ void PointCloudPreprocess::ProcessVelodyne(
     pcl::PointCloud<PointType>::Ptr& cloud_out) {
   pcl::PointCloud<VelodynePointXYZIRT> cloud_origin;
   pcl::fromROSMsg(*msg, cloud_origin);
-  LOG(INFO) << "Processing velodyne points";
   // These variables only works when no point timestamps given
   int plsize = cloud_origin.size();
   double omega_l = 3.61;  // scan angular velocity
@@ -63,7 +62,7 @@ void PointCloudPreprocess::ProcessVelodyne(
   if (cloud_origin.back().time > 0) {
     has_time_ = true;
   } else {
-    LOG(INFO) << "origin cloud has not timestamp";
+    LOG(INFO) << "origin cloud does not have timestamp";
     has_time_ = false;
     double yaw_first =
         atan2(cloud_origin.points[0].y, cloud_origin.points[0].x) * 57.29578;

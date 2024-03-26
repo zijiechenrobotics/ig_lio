@@ -16,7 +16,7 @@
     odom/max_radius: 150.0
     odom/point_filter_num: 6
     odom/time_scale: 1.0 # nclt: 0.001 other: 1000.0
-    odom/enable_ahrs_initalization: true
+    odom/enable_ahrs_initalization: false
     odom/enable_acc_correct: false
 
     odom/scan_resolution: 0.2
