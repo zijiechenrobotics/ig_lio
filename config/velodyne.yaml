@@ -3,8 +3,8 @@
     #for odom
 
     #topic names 
-    odom/lidar_topic: /points_raw #/points_raw
-    odom/imu_topic: /imu/data2 #/imu_correct
+    odom/lidar_topic: /real_points_raw #/points_raw
+    odom/imu_topic: /imu/data #/imu_correct
     odom/lidar_type: velodyne # livox velodyne ouster
 
     #frames
