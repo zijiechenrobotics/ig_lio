@@ -1,24 +1,15 @@
 #include "ig_lio/lio.h"
 #include "ig_lio/timer.h"
 
-extern Timer timer;
+Timer timer;
 
 bool LIO::MeasurementUpdate(SensorMeasurement& sensor_measurement) {
   if (sensor_measurement.measurement_type_ == MeasurementType::LIDAR) {
-    // range filter
-    CloudPtr filtered_cloud_ptr(new CloudType());
-    filtered_cloud_ptr->points.reserve(sensor_measurement.cloud_ptr_->size());
-    for (const auto& pt : sensor_measurement.cloud_ptr_->points) {
-      if (InRadius(pt)) {
-        filtered_cloud_ptr->points.emplace_back(pt);
-      }
-    }
-    sensor_measurement.cloud_ptr_ = filtered_cloud_ptr;
-
     timer.Evaluate(
         [&, this]() {
           // transform scan from lidar's frame to imu's frame
           CloudPtr cloud_body_ptr(new CloudType());
+          
           pcl::transformPointCloud(*sensor_measurement.cloud_ptr_,
                                    *cloud_body_ptr,
                                    config_.T_imu_lidar);
@@ -41,7 +32,7 @@ bool LIO::MeasurementUpdate(SensorMeasurement& sensor_measurement) {
         "downsample");
   }
 
-  // Make sure the local map is dense enought to measurement update
+  // Make sure the local map is dense enough to measurement update
   if (lidar_frame_count_ <= 10) {
     CloudPtr trans_cloud_ptr(new CloudType());
     pcl::transformPointCloud(
@@ -75,7 +66,7 @@ bool LIO::MeasurementUpdate(SensorMeasurement& sensor_measurement) {
     iter_num_++;
   }
 
-  // LOG(INFO) << "final hessian: " << std::endl << final_hessian_;
+//   LOG(INFO) << "final hessian: " << std::endl << final_hessian_;
   // P_ = final_hessian_.inverse();
   ComputeFinalCovariance(delta_x);
   prev_state_ = curr_state_;
@@ -114,13 +105,131 @@ bool LIO::MeasurementUpdate(SensorMeasurement& sensor_measurement) {
 
   ava_effect_feat_num_ += (effect_feat_num_ - ava_effect_feat_num_) /
                           static_cast<double>(lidar_frame_count_);
-  LOG(INFO) << "curr_feat_num: " << effect_feat_num_
-            << " ava_feat_num: " << ava_effect_feat_num_
-            << " keyframe_count: " << keyframe_count_
-            << " lidar_frame_count: " << lidar_frame_count_
-            << " grid_size: " << voxel_map_ptr_->GetVoxelMapSize();
+//   LOG(INFO) << "curr_feat_num: " << effect_feat_num_
+//             << " ava_feat_num: " << ava_effect_feat_num_
+//             << " keyframe_count: " << keyframe_count_
+//             << " lidar_frame_count: " << lidar_frame_count_
+//             << " grid_size: " << voxel_map_ptr_->GetVoxelMapSize();
   return true;
 }
+
+// bool LIO::MeasurementUpdateForReloc(SensorMeasurement& sensor_measurement) {
+//     LOG(INFO) << "The size of original cloud is " << sensor_measurement.cloud_ptr_->size() << std::endl;
+//     // timer.Evaluate(
+//     //     [&, this]() {
+//     //       // transform scan from lidar's frame to imu's frame
+//     //       sensor_measurement.cloud_ptr_;
+//     //       // undistort
+//     //       if (config_.enable_undistort) {
+//     //         UndistortPointCloud(sensor_measurement.bag_time_,
+//     //                             sensor_measurement.lidar_end_time_,
+//     //                             sensor_measurement.cloud_ptr_);
+//     //       }
+//     //     },
+//     //     "undistort");
+
+//     // timer.Evaluate(
+//     //     [&, this]() {
+//     //       fast_voxel_grid_ptr_->Filter(
+//     //           sensor_measurement.cloud_ptr_, cloud_DS_ptr_, cloud_cov_ptr_);
+//     //     },
+//     //     "downsample");
+
+//   // Make sure the local map is dense enough to measurement update
+//   if (lidar_frame_count_ <= 10) {
+//     CloudPtr trans_cloud_ptr(new CloudType());
+//     pcl::transformPointCloud(
+//         *sensor_measurement.cloud_ptr_, *trans_cloud_ptr, curr_state_.pose);
+//     voxel_map_ptr_->AddCloud(trans_cloud_ptr);
+//     lidar_frame_count_++;
+//     return true;
+//   }
+
+//   // measurement update
+//   prev_state_ = curr_state_;
+//   iter_num_ = 0;
+//   need_converge_ = false;
+//   Eigen::Matrix<double, 15, 1> delta_x = Eigen::Matrix<double, 15, 1>::Zero();
+//   while (iter_num_ < config_.max_iterations) {
+//     double y0_lidar = 0;
+//     timer.Evaluate(
+//         [&, this]() {
+//         // After LIO has moved some distance, each voxel is already well
+//         // formulate
+//         // the surrounding environments
+//         if (keyframe_count_ > 20) {
+//             y0_lidar = ConstructGICPConstraints(H, b);
+//         }
+//         // In the initial state, the probability of each voxel is poor
+//         // use point-to-plane instead of GICP
+//         else {
+//             y0_lidar = ConstructPoint2PlaneConstraints(H, b);
+//         }
+//         },
+//         "lidar constraints");
+
+//     if (IsConverged(delta_x)) {
+//       // Optimization convergence, exit
+//       break;
+//     } else {
+//       // The first three iterations perform KNN, then no longer perform, thus
+//       // accelerating the problem convergence
+//       if (iter_num_ < 3) {
+//         need_converge_ = false;
+//       } else {
+//         need_converge_ = true;
+//       }
+//     }
+
+//     iter_num_++;
+//   }
+
+// //   LOG(INFO) << "final hessian: " << std::endl << final_hessian_;
+//   // P_ = final_hessian_.inverse();
+//   ComputeFinalCovariance(delta_x);
+//   prev_state_ = curr_state_;
+
+//   timer.Evaluate(
+//       [&, this]() {
+//         if (lidar_frame_count_ < 10) {
+//           CloudPtr trans_cloud_ptr(new CloudType());
+//           pcl::transformPointCloud(*sensor_measurement.cloud_ptr_,
+//                                    *trans_cloud_ptr,
+//                                    curr_state_.pose);
+//           voxel_map_ptr_->AddCloud(trans_cloud_ptr);
+
+//           last_keyframe_pose_ = curr_state_.pose;
+//         } else {
+//           Eigen::Matrix4d delta_p =
+//               last_keyframe_pose_.inverse() * curr_state_.pose;
+//           // The keyframe strategy ensures an appropriate spatial pattern of the
+//           // points in each voxel
+//           if (effect_feat_num_ < 1000 ||
+//               delta_p.block<3, 1>(0, 3).norm() > 0.5 ||
+//               Sophus::SO3d(delta_p.block<3, 3>(0, 0)).log().norm() > 0.18) {
+//             CloudPtr trans_cloud_DS_ptr(new CloudType());
+//             pcl::transformPointCloud(
+//                 *cloud_DS_ptr_, *trans_cloud_DS_ptr, curr_state_.pose);
+//             voxel_map_ptr_->AddCloud(trans_cloud_DS_ptr);
+
+//             last_keyframe_pose_ = curr_state_.pose;
+//             keyframe_count_++;
+//           }
+//         }
+//       },
+//       "update voxel map");
+
+//   lidar_frame_count_++;
+
+//   ava_effect_feat_num_ += (effect_feat_num_ - ava_effect_feat_num_) /
+//                           static_cast<double>(lidar_frame_count_);
+//   LOG(INFO) << "curr_feat_num: " << effect_feat_num_
+//             << " ava_feat_num: " << ava_effect_feat_num_
+//             << " keyframe_count: " << keyframe_count_
+//             << " lidar_frame_count: " << lidar_frame_count_
+//             << " grid_size: " << voxel_map_ptr_->GetVoxelMapSize();
+//   return true;
+// }
 
 bool LIO::StepOptimize(const SensorMeasurement& sensor_measurement,
                        Eigen::Matrix<double, 15, 1>& delta_x) {
@@ -553,39 +662,73 @@ double LIO::ConstructPoint2PlaneConstraints(Eigen::Matrix<double, 15, 15>& H,
   return result_matrix(7, 0);
 }
 
+
+//added this function since it hits a orthogonal error
+Eigen::Matrix3d LIO::correctRotationMatrix(const Eigen::Matrix3d& R) {
+    Eigen::JacobiSVD<Eigen::Matrix3d> svd(R, Eigen::ComputeFullU | Eigen::ComputeFullV);
+    Eigen::Matrix3d U = svd.matrixU();
+    Eigen::Matrix3d V = svd.matrixV();
+    // For a rotation matrix, we need to ensure the determinant is +1
+    Eigen::Matrix3d correctedR = U * V.transpose();
+    if(correctedR.determinant() < 0) {
+        U.col(2) *= -1; // Correct the sign to ensure a positive determinant
+        correctedR = U * V.transpose();
+    }
+    return correctedR;
+}
+
+
+
+
 double LIO::ConstructImuPriorConstraints(Eigen::Matrix<double, 15, 15>& H,
                                          Eigen::Matrix<double, 15, 1>& b) {
-  Sophus::SO3d ori_diff =
-      Sophus::SO3d(prev_state_.pose.block<3, 3>(0, 0).transpose() *
-                   curr_state_.pose.block<3, 3>(0, 0));
-  Eigen::Vector3d ori_error = ori_diff.log();
 
-  Eigen::Matrix3d right_jacoiban_inv = Sophus::SO3d::jr_inv(ori_diff);
+    /*-----------add a new logic to avoid orthogonal assertion -----------*/
 
-  Eigen::Matrix<double, 15, 15> jacobian =
-      Eigen::Matrix<double, 15, 15>::Identity();
-  jacobian.block<3, 3>(IndexErrorOri, IndexErrorOri) = right_jacoiban_inv;
 
-  // LOG(INFO) << "imu jacobian: " << std::endl << jacobian;
+    Eigen::Matrix3d rotationMatrix = prev_state_.pose.block<3, 3>(0, 0).transpose() *
+                                     curr_state_.pose.block<3, 3>(0, 0);
+    // Correct the rotation matrix
+    Eigen::Matrix3d correctedMatrix = correctRotationMatrix(rotationMatrix);
 
-  Eigen::Matrix<double, 15, 1> residual = Eigen::Matrix<double, 15, 1>::Zero();
-  residual.block<3, 1>(IndexErrorOri, 0) = ori_error;
-  residual.block<3, 1>(IndexErrorPos, 0) =
-      curr_state_.pose.block<3, 1>(0, 3) - prev_state_.pose.block<3, 1>(0, 3);
-  residual.block<3, 1>(IndexErrorVel, 0) = curr_state_.vel - prev_state_.vel;
-  residual.block<3, 1>(IndexErrorBiasAcc, 0) = curr_state_.ba - prev_state_.ba;
-  residual.block<3, 1>(IndexErrorBiasGyr, 0) = curr_state_.bg - prev_state_.bg;
+        // Use the corrected matrix to construct the Sophus::SO3d object
+    Sophus::SO3d ori_diff = Sophus::SO3d(correctedMatrix);
+    /* -------------------------------------------------------------------*/
 
-  Eigen::Matrix<double, 15, 15> inv_P = P_.inverse();
+    /*-----------This is the original one -----------*/
+        //   Sophus::SO3d ori_diff =
+        //       Sophus::SO3d(prev_state_.pose.block<3, 3>(0, 0).transpose() *
+        //                    curr_state_.pose.block<3, 3>(0, 0));
+    /* -------------------------------------------------------------------*/
 
-  // LOG(INFO) << "inv_P: " << std::endl << inv_P;
+    Eigen::Vector3d ori_error = ori_diff.log();
 
-  H += jacobian.transpose() * inv_P * jacobian;
-  b += jacobian.transpose() * inv_P * residual;
+    Eigen::Matrix3d right_jacoiban_inv = Sophus::SO3d::jr_inv(ori_diff);
 
-  double errors = residual.transpose() * inv_P * residual;
+    Eigen::Matrix<double, 15, 15> jacobian =
+        Eigen::Matrix<double, 15, 15>::Identity();
+    jacobian.block<3, 3>(IndexErrorOri, IndexErrorOri) = right_jacoiban_inv;
 
-  return errors;
+    // LOG(INFO) << "imu jacobian: " << std::endl << jacobian;
+
+    Eigen::Matrix<double, 15, 1> residual = Eigen::Matrix<double, 15, 1>::Zero();
+    residual.block<3, 1>(IndexErrorOri, 0) = ori_error;
+    residual.block<3, 1>(IndexErrorPos, 0) =
+        curr_state_.pose.block<3, 1>(0, 3) - prev_state_.pose.block<3, 1>(0, 3);
+    residual.block<3, 1>(IndexErrorVel, 0) = curr_state_.vel - prev_state_.vel;
+    residual.block<3, 1>(IndexErrorBiasAcc, 0) = curr_state_.ba - prev_state_.ba;
+    residual.block<3, 1>(IndexErrorBiasGyr, 0) = curr_state_.bg - prev_state_.bg;
+
+    Eigen::Matrix<double, 15, 15> inv_P = P_.inverse();
+
+    // LOG(INFO) << "inv_P: " << std::endl << inv_P;
+
+    H += jacobian.transpose() * inv_P * jacobian;
+    b += jacobian.transpose() * inv_P * residual;
+
+    double errors = residual.transpose() * inv_P * residual;
+
+    return errors;
 }
 
 bool LIO::Predict(const double time,
@@ -748,6 +891,7 @@ bool LIO::ErrorStateUpdate(const double dt,
   return true;
 }
 
+
 // Undistortion based on median integral
 bool LIO::UndistortPointCloud(const double bag_time,
                               const double lidar_end_time,
@@ -909,7 +1053,7 @@ bool LIO::StaticInitialization(SensorMeasurement& sensor_measurement) {
   Q_.block<3, 3>(IndexNoiseBiasGyr, IndexNoiseBiasGyr) =
       config_.bg_cov * Eigen::Matrix3d::Identity();
 
-  lio_time_ = sensor_measurement.imu_buff_.back().header.stamp.toSec();
+  lio_time_ = sensor_measurement.imu_buff_.back().header.stamp.sec + sensor_measurement.imu_buff_.back().header.stamp.nanosec * 1e-9;
   lio_init_ = true;
 
   LOG(INFO) << "imu static, mean_acc_: " << mean_acc_.transpose()
@@ -973,9 +1117,10 @@ bool LIO::AHRSInitialization(SensorMeasurement& sensor_measurement) {
   Q_.block<3, 3>(IndexNoiseBiasGyr, IndexNoiseBiasGyr) =
       config_.bg_cov * Eigen::Matrix3d::Identity();
 
-  lio_time_ = sensor_measurement.imu_buff_.back().header.stamp.toSec();
+  lio_time_ = sensor_measurement.imu_buff_.back().header.stamp.sec + sensor_measurement.imu_buff_.back().header.stamp.nanosec * 1e-9;
+  
   lio_init_ = true;
-
+  LOG(INFO) << "Done lio_init" << std::endl;
   return true;
 }
 

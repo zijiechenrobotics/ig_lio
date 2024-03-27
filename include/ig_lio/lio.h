@@ -9,8 +9,9 @@
 
 #include <deque>
 #include <numeric>
+#include <rclcpp/rclcpp.hpp>
 
-#include <sensor_msgs/Imu.h>
+#include <sensor_msgs/msg/imu.hpp>
 
 #include <glog/logging.h>
 
@@ -20,7 +21,6 @@
 #include <sophus/so3.hpp>
 
 #include <pcl/common/transforms.h>
-
 #include <tbb/parallel_for.h>
 #include <tbb/parallel_reduce.h>
 
@@ -41,7 +41,7 @@ struct SensorMeasurement {
   // The time of the last laser point in the scan
   double lidar_end_time_{0.0};
   CloudPtr cloud_ptr_{};
-  std::deque<sensor_msgs::Imu> imu_buff_;
+  std::deque<sensor_msgs::msg::Imu> imu_buff_;
 
   Eigen::Matrix4d gnss_pose_ = Eigen::Matrix4d::Identity();
   GNSSStatus gnss_status_ = GNSSStatus::NONE;
@@ -97,6 +97,8 @@ class LIO {
   }
 
   bool MeasurementUpdate(SensorMeasurement& sensor_measurement);
+  bool MeasurementUpdateForReloc(SensorMeasurement& sensor_measurement);
+  Eigen::Matrix3d correctRotationMatrix(const Eigen::Matrix3d& R);
 
   bool Predict(const double time,
                const Eigen::Vector3d& acc_1,
@@ -114,6 +116,7 @@ class LIO {
 
   bool IsInit() { return lio_init_; }
 
+  
   Eigen::Matrix4d GetCurrentPose() { return curr_state_.pose; }
 
   Eigen::Vector3d GetCurrentVel() { return curr_state_.vel; }
@@ -138,6 +141,9 @@ class LIO {
   static constexpr int IndexNoiseBiasAcc{12};
   static constexpr int IndexNoiseBiasGyr{15};
 
+
+
+
   struct PoseHistory {
     double time_ = 0.0;
     Eigen::Matrix4d T_ = Eigen::Matrix4d::Identity();
@@ -147,9 +153,11 @@ class LIO {
   };
   std::deque<PoseHistory> pose_history_;  // for pointcloud
 
+
+
   struct Correspondence {
    public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     Eigen::Vector3d mean_A = Eigen::Vector3d::Zero();
     Eigen::Vector3d mean_B = Eigen::Vector3d::Zero();
     Eigen::Matrix3d mahalanobis = Eigen::Matrix3d::Zero();
@@ -161,7 +169,7 @@ class LIO {
 
   struct State {
    public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     Eigen::Matrix4d pose = Eigen::Matrix4d::Identity();
     Eigen::Vector3d vel = Eigen::Vector3d::Zero();
     Eigen::Vector3d ba = Eigen::Vector3d::Zero();
