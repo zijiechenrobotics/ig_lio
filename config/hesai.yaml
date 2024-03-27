@@ -5,13 +5,13 @@
     #topic names 
     odom/lidar_topic: /points_raw
     odom/imu_topic: /imu/data #/imu_correct
-    odom/lidar_type: velodyne # livox velodyne ouster
+    odom/lidar_type: hesai # livox velodyne ouster
 
     #frames
     odom/odom_frame: ig_odom
     odom/robot_frame: base_link
     odom/imu_frame: imu_link
-    odom/lidar_frame: velodyne
+    odom/lidar_frame: hesai
     odom/min_radius: 0.1
     odom/max_radius: 150.0
     odom/point_filter_num: 6
@@ -40,13 +40,11 @@
     odom/enable_outlier_rejection: true
 
     
-
-    
     #for extrinsics
-    extrinsics/imu2lidar/t: [0.0, 0.0, 0.0]
-    extrinsics/imu2lidar/r: [1.0, 0.0, 0.0,
-                            0.0, 1.0, 0.0,
-                            0.0,  0.0, 1.0 ]
+    extrinsics/imu2lidar/t: [ 0.1634, 0., 0.116 ]
+    extrinsics/imu2lidar/r: [ 0., -1.,  0.,
+                              1.,  0.,  0.,
+                              0.,  0.,  1. ]
     
     extrinsics/robot2lidar/t: [0.0, 0.0, 0.0]
     extrinsics/robot2lidar/r: [1.0, 0.0, 0.0,
@@ -60,5 +58,5 @@
 
     #for map
     map/save_map_path: /home/agilex/humble_ws #do not put / at the end of line
-    map/map_name: jfe
+    map/map_name: ts_2nd
     map/map_frame: ig_odom

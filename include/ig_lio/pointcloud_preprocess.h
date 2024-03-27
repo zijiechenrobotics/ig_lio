@@ -19,7 +19,7 @@
 
 #include <glog/logging.h>
 
-enum class LidarType { LIVOX, VELODYNE, OUSTER };
+enum class LidarType { LIVOX, VELODYNE, OUSTER, HESAI };
 
 struct VelodynePointXYZIRT {
   PCL_ADD_POINT4D;
@@ -32,6 +32,18 @@ POINT_CLOUD_REGISTER_POINT_STRUCT(
     VelodynePointXYZIRT,
     (float, x, x)(float, y, y)(float, z, z)(float, intensity, intensity)(
         uint16_t, ring, ring)(float, time, time))
+
+struct HesaiPointXYZIRT {
+  PCL_ADD_POINT4D;
+  PCL_ADD_INTENSITY
+  uint16_t ring;
+  float timestamp;
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+} EIGEN_ALIGN16;
+POINT_CLOUD_REGISTER_POINT_STRUCT(
+    HesaiPointXYZIRT,
+    (float, x, x)(float, y, y)(float, z, z)(float, intensity, intensity)(
+        uint16_t, ring, ring)(float, timestamp, timestamp))
 
 // for Ouster LiDAR
 struct OusterPointXYZIRT {
@@ -94,6 +106,8 @@ class PointCloudPreprocess {
 
   void ProcessOuster(const sensor_msgs::msg::PointCloud2::SharedPtr msg,
                      pcl::PointCloud<PointType>::Ptr& cloud_out);
+  void ProcessHesai(const sensor_msgs::msg::PointCloud2::SharedPtr msg,
+                       pcl::PointCloud<PointType>::Ptr& cloud_out);
   bool InRadius(const PointType& p) {
     double radius = p.x * p.x + p.y * p.y + p.z * p.z;
     return (radius < (config_.max_radius * config_.max_radius) &&
