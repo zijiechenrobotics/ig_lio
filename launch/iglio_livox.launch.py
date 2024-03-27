@@ -44,6 +44,6 @@ def generate_launch_description():
             package='tf2_ros',
             executable='static_transform_publisher',
             name='world_to_map',
-            arguments=['0', '0', '0', '0', '0', '0', '1', 'map', 'odom']
+            arguments=['0', '0', '0', '0', '0', '0', '1', 'map', 'ig_odom']
         )
     ])
