@@ -8,6 +8,7 @@ Panels:
         - /Status1
         - /PointCloud21
         - /Axes1
+        - /Path1
         - /TF1
       Splitter Ratio: 0.5
     Tree Height: 539
@@ -53,8 +54,8 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 25.37679100036621
-        Min Value: -4.814680576324463
+        Max Value: 1.7763150930404663
+        Min Value: -0.20444954931735992
         Value: true
       Axis: Z
       Channel Name: intensity
@@ -85,12 +86,12 @@ Visualization Manager:
       Use rainbow: true
       Value: true
     - Class: rviz_default_plugins/Axes
-      Enabled: true
+      Enabled: false
       Length: 3
       Name: Axes
       Radius: 0.10000000149011612
       Reference Frame: base_link
-      Value: true
+      Value: false
     - Alpha: 1
       Buffer Length: 1
       Class: rviz_default_plugins/Path
@@ -117,39 +118,74 @@ Visualization Manager:
         Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /path
+        Value: /ig_lio/path
       Value: true
     - Class: rviz_default_plugins/TF
       Enabled: true
       Frame Timeout: 15
       Frames:
         All Enabled: true
+        base_footprint:
+          Value: true
         base_link:
+          Value: true
+        camera_link:
+          Value: true
+        camera_link_optical:
+          Value: true
+        caster_wheel:
+          Value: true
+        chassis:
+          Value: true
+        face_link:
+          Value: true
+        ig_odom:
           Value: true
         imu_link:
           Value: true
-        odom:
+        left_wheel:
+          Value: true
+        map:
+          Value: true
+        right_wheel:
           Value: true
         velodyne:
           Value: true
-      Marker Scale: 10
+        velodyne_base_link:
+          Value: true
+      Marker Scale: 1
       Name: TF
       Show Arrows: true
       Show Axes: true
       Show Names: true
       Tree:
-        odom:
-          base_link:
-            imu_link:
-              {}
-            velodyne:
-              {}
+        map:
+          ig_odom:
+            base_link:
+              base_footprint:
+                imu_link:
+                  {}
+                velodyne_base_link:
+                  velodyne:
+                    {}
+              chassis:
+                camera_link:
+                  camera_link_optical:
+                    {}
+                caster_wheel:
+                  {}
+                face_link:
+                  {}
+              left_wheel:
+                {}
+              right_wheel:
+                {}
       Update Interval: 0
       Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
-    Fixed Frame: odom
+    Fixed Frame: ig_odom
     Frame Rate: 30
   Name: root
   Tools:
@@ -189,25 +225,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 82.98785400390625
+      Distance: 5.103625774383545
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -1.0943259000778198
-        Y: -9.608914375305176
-        Z: 12.13829231262207
+        X: -2.2072601318359375
+        Y: -5.650888919830322
+        Z: 12.181145668029785
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.4203975200653076
+      Pitch: 1.4903974533081055
       Target Frame: base_link
       Value: Orbit (rviz)
-      Yaw: 3.7354094982147217
+      Yaw: 3.545408010482788
     Saved: ~
 Window Geometry:
   Displays:
@@ -225,5 +261,5 @@ Window Geometry:
   Views:
     collapsed: true
   Width: 1370
-  X: 70
-  Y: 27
+  X: 487
+  Y: 140
