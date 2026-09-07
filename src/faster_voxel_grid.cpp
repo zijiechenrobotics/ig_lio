@@ -28,6 +28,7 @@ void FasterVoxelGrid::Filter(const CloudPtr& input_cloud_ptr,
   voxel_array_ptr_->reserve(input_cloud_ptr->size());
 
   // Assign each points to the voxel_map
+  std::vector<size_t> hash_idx_vec(input_cloud_ptr->size());
   tbb::parallel_for(tbb::blocked_range<size_t>(0, input_cloud_ptr->size()),
                     [&, this](tbb::blocked_range<size_t> r) {
                       for (size_t i = r.begin(); i < r.end(); ++i) {
@@ -35,7 +36,16 @@ void FasterVoxelGrid::Filter(const CloudPtr& input_cloud_ptr,
                             input_cloud_ptr->points[i]
                                 .getVector3fMap()
                                 .template cast<double>();
-                        size_t hash_idx = ComputeHashIndex(point);
+                        hash_idx_vec[i] = ComputeHashIndex(point);
+                      }
+                    });
+
+                      for (size_t i = 0; i < input_cloud_ptr->size(); ++i) {
+                        const Eigen::Vector3d point =
+                            input_cloud_ptr->points[i]
+                                .getVector3fMap()
+                                .template cast<double>();
+                                            size_t hash_idx = hash_idx_vec[i];
 
                         MyAccessor accessor;
                         voxel_map_ptr_->insert(accessor, hash_idx);
@@ -57,7 +67,6 @@ void FasterVoxelGrid::Filter(const CloudPtr& input_cloud_ptr,
                               static_cast<double>(accessor->second->N_);
                         }
                       }
-                    });
 
   // Voxel-based surface covariance estimator
   cloud_DS_ptr->resize(voxel_array_ptr_->size());
