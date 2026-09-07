@@ -28,6 +28,7 @@ void FasterVoxelGrid::Filter(const CloudPtr& input_cloud_ptr,
   voxel_array_ptr_->reserve(input_cloud_ptr->size());
 
   // Assign each points to the voxel_map
+  std::vector<size_t> hash_idx_vec(input_cloud_ptr->size());
   tbb::parallel_for(tbb::blocked_range<size_t>(0, input_cloud_ptr->size()),
                     [&, this](tbb::blocked_range<size_t> r) {
                       for (size_t i = r.begin(); i < r.end(); ++i) {
@@ -35,7 +36,16 @@ void FasterVoxelGrid::Filter(const CloudPtr& input_cloud_ptr,
                             input_cloud_ptr->points[i]
                                 .getVector3fMap()
                                 .template cast<double>();
-                        size_t hash_idx = ComputeHashIndex(point);
+                        hash_idx_vec[i] = ComputeHashIndex(point);
+                      }
+                    });
+
+                      for (size_t i = 0; i < input_cloud_ptr->size(); ++i) {
+                        const Eigen::Vector3d point =
+                            input_cloud_ptr->points[i]
+                                .getVector3fMap()
+                                .template cast<double>();
+                                            size_t hash_idx = hash_idx_vec[i];
 
                         MyAccessor accessor;
                         voxel_map_ptr_->insert(accessor, hash_idx);
@@ -57,12 +67,11 @@ void FasterVoxelGrid::Filter(const CloudPtr& input_cloud_ptr,
                               static_cast<double>(accessor->second->N_);
                         }
                       }
-                    });
 
   // Voxel-based surface covariance estimator
   cloud_DS_ptr->resize(voxel_array_ptr_->size());
   cloud_cov_ptr->resize(voxel_array_ptr_->size());
-  size_t point_with_cov_count = 0;
+  std::vector<uint8_t> has_cov(voxel_array_ptr_->size(), 0);
   tbb::parallel_for(
       tbb::blocked_range<size_t>(0, voxel_array_ptr_->size()),
       [&, this](tbb::blocked_range<size_t> r) {
@@ -106,7 +115,7 @@ void FasterVoxelGrid::Filter(const CloudPtr& input_cloud_ptr,
             modified_cov =
                 svd.matrixU() * values.asDiagonal() * svd.matrixV().transpose();
 
-            point_with_cov_count++;
+            has_cov[i] = 1;
           }
 
           cloud_cov_ptr->points[i].cov[0] = modified_cov(0, 0);
@@ -117,6 +126,11 @@ void FasterVoxelGrid::Filter(const CloudPtr& input_cloud_ptr,
           cloud_cov_ptr->points[i].cov[5] = modified_cov(2, 2);
         }
       });
+
+  size_t point_with_cov_count = 0;
+  for (const uint8_t value : has_cov) {
+    point_with_cov_count += value;
+  }
 
   frame_count_++;
   double current_precent = (static_cast<double>(point_with_cov_count) /

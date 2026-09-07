@@ -197,17 +197,16 @@ bool LIO::GNStep(const SensorMeasurement& sensor_measurement,
 
 double LIO::ConstructGICPConstraints(Eigen::Matrix<double, 15, 15>& H,
                                      Eigen::Matrix<double, 15, 1>& b) {
-  Eigen::Matrix<double, 8, 6> result_matrix =
-      Eigen::Matrix<double, 8, 6>::Zero();
-  Eigen::Matrix<double, 8, 6> init_matrix = Eigen::Matrix<double, 8, 6>::Zero();
-
   if (need_converge_) {
-    result_matrix = tbb::parallel_reduce(
+
+    std::vector<Eigen::Matrix<double, 8, 6>> tmp_matrix_vec;
+    tmp_matrix_vec.resize(correspondences_array_.size());
+
+    tbb::parallel_for(
         tbb::blocked_range<size_t>(0, correspondences_array_.size()),
-        init_matrix,
-        [&, this](tbb::blocked_range<size_t> r,
-                  Eigen::Matrix<double, 8, 6> local_result) {
-          for (size_t i = r.begin(); i < r.end(); ++i) {
+        [&](const tbb::blocked_range<size_t>& range) {
+          for (size_t i = range.begin(); i != range.end(); ++i) {
+      Eigen::Matrix<double, 8, 6> tmp_matrix = Eigen::Matrix<double, 8, 6>::Zero();
             Eigen::Vector3d trans_mean_A =
                 curr_state_.pose.block<3, 3>(0, 0) *
                     correspondences_array_[i]->mean_A +
@@ -249,7 +248,7 @@ double LIO::ConstructGICPConstraints(Eigen::Matrix<double, 15, 15>& H,
             Eigen::Vector3d rho;
             CauchyLossFunction(cost_function, 10.0, rho);
 
-            local_result(7, 0) += config_.gicp_constraint_gain * rho[0];
+      tmp_matrix(7, 0) += config_.gicp_constraint_gain * rho[0];
 
             // The residual takes the partial derivative of the state
             Eigen::Matrix<double, 3, 6> dres_dx =
@@ -267,21 +266,19 @@ double LIO::ConstructGICPConstraints(Eigen::Matrix<double, 15, 15>& H,
                 config_.gicp_constraint_gain *
                 (rho[1] * mahalanobis + 2.0 * rho[2] * mahalanobis * error *
                                             error.transpose() * mahalanobis);
-            local_result.block(0, 0, 6, 6) +=
+
+      tmp_matrix.block(0, 0, 6, 6) +=
                 dres_dx.transpose() * robust_information_matrix * dres_dx;
-
-            local_result.block(6, 0, 1, 6) +=
-                (config_.gicp_constraint_gain * rho[1] * dres_dx.transpose() *
-                 mahalanobis * error)
-                    .transpose();
+      tmp_matrix.block(6, 0, 1, 6) +=
+        (config_.gicp_constraint_gain * rho[1] * dres_dx.transpose() * mahalanobis * error).transpose();
+            tmp_matrix_vec[i] = tmp_matrix;
           }
-
-          return local_result;
-        },
-        [](Eigen::Matrix<double, 8, 6> x, Eigen::Matrix<double, 8, 6> y) {
-          return x + y;
         });
 
+    Eigen::Matrix<double, 8, 6> result_matrix = Eigen::Matrix<double, 8, 6>::Zero();
+    for (size_t i = 0; i < tmp_matrix_vec.size(); ++i) {
+      result_matrix += tmp_matrix_vec[i];
+    }
     H.block<6, 6>(IndexErrorOri, IndexErrorOri) +=
         result_matrix.block<6, 6>(0, 0);
     b.block<6, 1>(IndexErrorOri, 0) +=
@@ -293,12 +290,9 @@ double LIO::ConstructGICPConstraints(Eigen::Matrix<double, 15, 15>& H,
   size_t delta_p_size = voxel_map_ptr_->delta_P_.size();
   size_t N = cloud_cov_ptr_->size();
   correspondences_array_.clear();
-  result_matrix = tbb::parallel_reduce(
-      tbb::blocked_range<size_t>(0, N),
-      init_matrix,
-      [&, this](tbb::blocked_range<size_t> r,
-                Eigen::Matrix<double, 8, 6> local_result) {
-        for (size_t i = r.begin(); i < r.end(); ++i) {
+  std::vector<Eigen::Matrix<double, 8, 6>> tmp_matrix_vec(N);
+  correspondences_array_.reserve(N);
+  for (size_t i = 0; i < N; ++i) {
           const PointCovType& point_cov = cloud_cov_ptr_->points[i];
           const Eigen::Vector3d mean_A =
               point_cov.getVector3fMap().cast<double>();
@@ -314,9 +308,11 @@ double LIO::ConstructGICPConstraints(Eigen::Matrix<double, 15, 15>& H,
           Eigen::Vector3d mean_B = Eigen::Vector3d::Zero();
           Eigen::Matrix3d cov_B = Eigen::Matrix3d::Zero();
 
-          for (size_t i = 0; i < delta_p_size; ++i) {
+    Eigen::Matrix<double, 8, 6> tmp_matrix = Eigen::Matrix<double, 8, 6>::Zero();
+
+    for (size_t j = 0; j < delta_p_size; ++j) {
             Eigen::Vector3d nearby_point =
-                trans_mean_A + voxel_map_ptr_->delta_P_[i];
+        trans_mean_A + voxel_map_ptr_->delta_P_[j];
             size_t hash_idx = voxel_map_ptr_->ComputeHashIndex(nearby_point);
             if (voxel_map_ptr_->GetCentroidAndCovariance(
                     hash_idx, mean_B, cov_B) &&
@@ -373,7 +369,7 @@ double LIO::ConstructGICPConstraints(Eigen::Matrix<double, 15, 15>& H,
               Eigen::Vector3d rho;
               CauchyLossFunction(cost_function, 10.0, rho);
 
-              local_result(7, 0) += config_.gicp_constraint_gain * rho[0];
+        tmp_matrix(7, 0) += config_.gicp_constraint_gain * rho[0];
 
               // The residual takes the partial derivative of the state
               Eigen::Matrix<double, 3, 6> dres_dx =
@@ -390,10 +386,10 @@ double LIO::ConstructGICPConstraints(Eigen::Matrix<double, 15, 15>& H,
                   config_.gicp_constraint_gain *
                   (rho[1] * mahalanobis + 2.0 * rho[2] * mahalanobis * error *
                                               error.transpose() * mahalanobis);
-              local_result.block(0, 0, 6, 6) +=
+        tmp_matrix.block(0, 0, 6, 6) +=
                   dres_dx.transpose() * robust_information_matrix * dres_dx;
 
-              local_result.block(6, 0, 1, 6) +=
+        tmp_matrix.block(6, 0, 1, 6) +=
                   (config_.gicp_constraint_gain * rho[1] * dres_dx.transpose() *
                    mahalanobis * error)
                       .transpose();
@@ -401,13 +397,13 @@ double LIO::ConstructGICPConstraints(Eigen::Matrix<double, 15, 15>& H,
               break;
             }
           }
-        }
+    tmp_matrix_vec[i] = tmp_matrix;
+  }
 
-        return local_result;
-      },
-      [](Eigen::Matrix<double, 8, 6> x, Eigen::Matrix<double, 8, 6> y) {
-        return x + y;
-      });
+  Eigen::Matrix<double, 8, 6> result_matrix = Eigen::Matrix<double, 8, 6>::Zero();
+  for (size_t i = 0; i < tmp_matrix_vec.size(); ++i) {
+    result_matrix += tmp_matrix_vec[i];
+  }
 
   effect_feat_num_ = correspondences_array_.size();
 
@@ -421,18 +417,19 @@ double LIO::ConstructGICPConstraints(Eigen::Matrix<double, 15, 15>& H,
 
 double LIO::ConstructPoint2PlaneConstraints(Eigen::Matrix<double, 15, 15>& H,
                                             Eigen::Matrix<double, 15, 1>& b) {
-  Eigen::Matrix<double, 8, 6> result_matrix =
-      Eigen::Matrix<double, 8, 6>::Zero();
-  Eigen::Matrix<double, 8, 6> init_matrix = Eigen::Matrix<double, 8, 6>::Zero();
 
   // Skip the KNN to accelerate convergence
   if (need_converge_) {
-    result_matrix = tbb::parallel_reduce(
+
+    std::vector<Eigen::Matrix<double, 8, 6>> tmp_matrix_vec;
+    tmp_matrix_vec.resize(correspondences_array_.size());
+
+    tbb::parallel_for(
         tbb::blocked_range<size_t>(0, correspondences_array_.size()),
-        init_matrix,
-        [&, this](tbb::blocked_range<size_t> r,
-                  Eigen::Matrix<double, 8, 6> local_result) {
-          for (size_t i = r.begin(); i < r.end(); ++i) {
+        [&](const tbb::blocked_range<size_t>& range) {
+          for (size_t i = range.begin(); i != range.end(); ++i) {
+      Eigen::Matrix<double, 8, 6> tmp_matrix = Eigen::Matrix<double, 8, 6>::Zero();
+
             const Eigen::Vector3d trans_pt =
                 curr_state_.pose.block<3, 3>(0, 0) *
                     correspondences_array_[i]->mean_A +
@@ -443,7 +440,7 @@ double LIO::ConstructPoint2PlaneConstraints(Eigen::Matrix<double, 15, 15>& H,
             double error =
                 plane_coeff.head(3).dot(trans_pt) + plane_coeff(3, 0);
 
-            local_result(7, 0) +=
+      tmp_matrix(7, 0) +=
                 config_.point2plane_constraint_gain * error * error;
 
             // The residual takes the partial derivative of the state
@@ -459,19 +456,21 @@ double LIO::ConstructPoint2PlaneConstraints(Eigen::Matrix<double, 15, 15>& H,
             // The residual takes the partial derivative of position
             dres_dx.block<1, 3>(0, 3) = plane_coeff.head(3).transpose();
 
-            local_result.block(0, 0, 6, 6) +=
+      tmp_matrix.block(0, 0, 6, 6) +=
                 config_.point2plane_constraint_gain * dres_dx.transpose() *
                 dres_dx;
 
-            local_result.block(6, 0, 1, 6) +=
+      tmp_matrix.block(6, 0, 1, 6) +=
                 config_.point2plane_constraint_gain * dres_dx * error;
-          }
 
-          return local_result;
-        },
-        [](Eigen::Matrix<double, 8, 6> x, Eigen::Matrix<double, 8, 6> y) {
-          return x + y;
+            tmp_matrix_vec[i] = tmp_matrix;
+          }
         });
+
+    Eigen::Matrix<double, 8, 6> result_matrix = Eigen::Matrix<double, 8, 6>::Zero();
+    for (size_t i = 0; i < tmp_matrix_vec.size(); ++i) {
+      result_matrix += tmp_matrix_vec[i];
+    }
 
     H.block<6, 6>(IndexErrorOri, IndexErrorOri) +=
         result_matrix.block<6, 6>(0, 0);
@@ -483,12 +482,17 @@ double LIO::ConstructPoint2PlaneConstraints(Eigen::Matrix<double, 15, 15>& H,
 
   size_t N = cloud_cov_ptr_->size();
   correspondences_array_.clear();
-  result_matrix = tbb::parallel_reduce(
+
+  std::vector<Eigen::Matrix<double, 8, 6>> tmp_matrix_vec;
+  tmp_matrix_vec.resize(N);
+  correspondences_array_.reserve(N);
+  std::vector<std::vector<Eigen::Vector3d>> nearest_points_vec(N);
+
+  tbb::parallel_for(
       tbb::blocked_range<size_t>(0, N),
-      init_matrix,
-      [&, this](tbb::blocked_range<size_t> r,
-                Eigen::Matrix<double, 8, 6> local_result) {
-        for (size_t i = r.begin(); i < r.end(); ++i) {
+      [&](const tbb::blocked_range<size_t>& range) {
+        for (size_t i = range.begin(); i != range.end(); ++i) {
+
           const Eigen::Vector3d p =
               cloud_cov_ptr_->points[i].getVector3fMap().cast<double>();
           const Eigen::Vector3d p_w = curr_state_.pose.block<3, 3>(0, 0) * p +
@@ -498,7 +502,19 @@ double LIO::ConstructPoint2PlaneConstraints(Eigen::Matrix<double, 15, 15>& H,
           nearest_points.reserve(10);
 
           voxel_map_ptr_->KNNByCondition(p_w, 5, 5.0, nearest_points);
+          nearest_points_vec[i] = nearest_points;
+        }
+      });
 
+  for (size_t i = 0; i < N; ++i) {
+    Eigen::Matrix<double, 8, 6> tmp_matrix = Eigen::Matrix<double, 8, 6>::Zero();
+
+    const Eigen::Vector3d p =
+      cloud_cov_ptr_->points[i].getVector3fMap().cast<double>();
+    const Eigen::Vector3d p_w = curr_state_.pose.block<3, 3>(0, 0) * p +
+                                curr_state_.pose.block<3, 1>(0, 3);
+
+    auto &nearest_points = nearest_points_vec[i];
           Eigen::Vector4d plane_coeff;
           if (nearest_points.size() >= 3 &&
               EstimatePlane(plane_coeff, nearest_points)) {
@@ -511,8 +527,7 @@ double LIO::ConstructPoint2PlaneConstraints(Eigen::Matrix<double, 15, 15>& H,
               corr_ptr->mean_A = p;
               corr_ptr->plane_coeff = plane_coeff;
               correspondences_array_.emplace_back(corr_ptr);
-
-              local_result(7, 0) +=
+        tmp_matrix(7, 0) +=
                   config_.point2plane_constraint_gain * error * error;
 
               // The residual takes the partial derivative of the state
@@ -527,23 +542,23 @@ double LIO::ConstructPoint2PlaneConstraints(Eigen::Matrix<double, 15, 15>& H,
               // The residual takes the partial derivative of position
               dres_dx.block<1, 3>(0, 3) = plane_coeff.head(3).transpose();
 
-              local_result.block(0, 0, 6, 6) +=
+        tmp_matrix.block(0, 0, 6, 6) +=
                   config_.point2plane_constraint_gain * dres_dx.transpose() *
                   dres_dx;
 
-              local_result.block(6, 0, 1, 6) +=
+        tmp_matrix.block(6, 0, 1, 6) +=
                   config_.point2plane_constraint_gain * dres_dx * error;
+
             }
           }
+    tmp_matrix_vec[i] = tmp_matrix;
         }
 
-        return local_result;
-      },
-      [](Eigen::Matrix<double, 8, 6> x, Eigen::Matrix<double, 8, 6> y) {
-        return x + y;
-      });
-
+  Eigen::Matrix<double, 8, 6> result_matrix = Eigen::Matrix<double, 8, 6>::Zero();
   effect_feat_num_ = correspondences_array_.size();
+  for (size_t i = 0; i < tmp_matrix_vec.size(); ++i) {
+    result_matrix += tmp_matrix_vec[i];
+  }
 
   H.block<6, 6>(IndexErrorOri, IndexErrorOri) +=
       result_matrix.block<6, 6>(0, 0);
