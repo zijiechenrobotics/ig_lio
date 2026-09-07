@@ -92,6 +92,7 @@ bool VoxelMap::AddCloud(const CloudPtr& input_cloud_ptr) {
           point_hash_idx p;
           p.point_ = input_cloud_ptr->points[i].getVector3fMap().cast<double>();
           p.hash_idx_ = ComputeHashIndex(p.point_);
+          p.point_idx_ = i;
           point_buff[i] = p;
         }
       });

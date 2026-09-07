@@ -45,6 +45,7 @@ struct point_hash_idx {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   Eigen::Vector3d point_;
   size_t hash_idx_;  //
+  size_t point_idx_{0};
 
   point_hash_idx() = default;
   point_hash_idx(Eigen::Vector3d point, size_t hash_idx)
@@ -52,7 +53,8 @@ struct point_hash_idx {
       , hash_idx_(hash_idx) {}
 
   bool operator<(const point_hash_idx& p) const {
-    return (hash_idx_ < p.hash_idx_);
+    return (hash_idx_ < p.hash_idx_) ||
+           (hash_idx_ == p.hash_idx_ && point_idx_ < p.point_idx_);
   }
 };
 
